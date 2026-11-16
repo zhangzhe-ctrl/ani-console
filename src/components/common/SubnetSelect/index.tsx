@@ -1,7 +1,7 @@
-import { Select, type SelectProps } from "@arco-design/web-react";
-import { useQuery } from "@tanstack/react-query";
+import { Button, Select, type SelectProps } from "@arco-design/web-react";
 import { useState } from "react";
-import { listNetworkSubnets, type NetworkSubnet } from "@/api/network";
+import type { NetworkSubnet } from "@/api/network";
+import { useSubnetOptions } from "@/hooks/useNetworkSelectionOptions";
 
 type SubnetSelectProps = Pick<
   SelectProps,
@@ -23,37 +23,62 @@ export default function SubnetSelect({
   onChange,
   ...props
 }: SubnetSelectProps) {
-  const [name, setName] = useState("");
+  const [search, setSearch] = useState({ vpcId, name: "" });
+  const name = search.vpcId === vpcId ? search.name : "";
   const params = {
     vpc_id: vpcId || undefined,
     name: name.trim() || undefined,
     can_use: canUse,
     can_manage: canManage,
   };
-  const subnets = useQuery({
-    queryKey: ["network-subnets", "options", params],
-    // TODO(subnet-pagination): 子网仍为 cursor/limit，暂取首批 100 项；后端迁为 page/pageSize 后改用 withFirst100，不遍历游标。
-    queryFn: ({ signal }) => listNetworkSubnets({ ...params, limit: 100 }, signal),
-    enabled: !disabled,
-    meta: { errorNotification: { id: "subnet-options", action: "子网选项加载" } },
-  });
+  const subnets = useSubnetOptions(params, !disabled && (!canUse || Boolean(vpcId)));
+  const [selected, setSelected] = useState<NetworkSubnet>();
 
   return (
     <Select
       placeholder="请选择子网"
       {...props}
-      onChange={(id, option) =>
-        onChange?.(
-          id,
-          Array.isArray(option) ? undefined : (option?.extra as NetworkSubnet | undefined),
-        )
-      }
+      onChange={(id, option) => {
+        const item = Array.isArray(option)
+          ? undefined
+          : (option?.extra as NetworkSubnet | undefined);
+        setSelected(item);
+        onChange?.(id, item);
+      }}
       disabled={disabled}
       loading={subnets.isFetching}
       showSearch
       filterOption={false}
-      onSearch={setName}
-      options={(subnets.data?.items ?? []).map((subnet) => ({
+      inputValue={name}
+      onInputValueChange={(value) => setSearch({ vpcId, name: value })}
+      onVisibleChange={(visible) => {
+        if (visible) subnets.refresh();
+      }}
+      renderFormat={(option) => {
+        const item = subnets.items.find((candidate) => candidate.id === props.value) ?? selected;
+        return item && item.id === props.value
+          ? `${item.name}${item.owner_scope === "platform" ? " · 平台基础网络" : ""} · ${item.cidr || "-"}`
+          : (option?.children ?? props.value);
+      }}
+      dropdownRender={(menu) => (
+        <>
+          {menu}
+          <div className="flex justify-between p-2" onMouseDown={(event) => event.preventDefault()}>
+            <Button size="mini" onClick={subnets.refresh} loading={subnets.isFetching}>
+              刷新
+            </Button>
+            <Button
+              size="mini"
+              disabled={!subnets.hasNextPage || subnets.isFetching}
+              loading={subnets.isFetchingNextPage}
+              onClick={() => subnets.fetchNextPage()}
+            >
+              {subnets.hasNextPage ? "加载更多" : "已加载全部"}
+            </Button>
+          </div>
+        </>
+      )}
+      options={subnets.items.map((subnet) => ({
         value: subnet.id,
         extra: subnet,
         label: `${subnet.name}${subnet.owner_scope === "platform" ? " · 平台基础网络" : ""} · ${subnet.cidr || "-"}`,

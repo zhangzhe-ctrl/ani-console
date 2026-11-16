@@ -1,4 +1,3 @@
-import "@arco-design/web-react/dist/css/arco.css";
 import "@/assets/iconfont/iconfont.css";
 import "@/styles/global.css";
 import { StrictMode } from "react";

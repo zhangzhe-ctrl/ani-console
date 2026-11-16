@@ -1,4 +1,4 @@
-import { Form, Modal, Spin } from "@arco-design/web-react";
+import { Alert, Form, Modal, Spin } from "@arco-design/web-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getInstance, setInstanceSecurityGroups } from "@/api/instances";
 import SecurityGroupSelect from "@/components/common/SecurityGroupSelect";
@@ -85,6 +85,11 @@ export default function ContainerChangeSecurityGroupsModal({
             initialValues={{ security_group_ids: current.data.security_group_ids ?? [] }}
             disabled={update.isPending}
           >
+            <Alert
+              className="mb-4"
+              type="warning"
+              content="修改安全组会重新启动运行中的容器，当前连接将断开，工作盘保留。"
+            />
             <Form.Item
               field="security_group_ids"
               label="安全组"

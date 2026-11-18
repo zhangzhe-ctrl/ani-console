@@ -1,8 +1,8 @@
-import { Button } from "@arco-design/web-react";
+import { Button, Empty } from "@arco-design/web-react";
 import type { StorageVolumeConsumer } from "@/api/storage/volumes";
 import { DataTable } from "@/components/common";
-type VolumeConsumersProps = { consumers: StorageVolumeConsumer[] };
-export default function VolumeConsumers({ consumers }: VolumeConsumersProps) {
+type VolumeConsumersProps = { consumers: StorageVolumeConsumer[]; consumersKnown: boolean };
+export default function VolumeConsumers({ consumers, consumersKnown }: VolumeConsumersProps) {
   // TODO(storage-migration): consumers 只包含工作负载身份，旧挂载/卸载实现保留在 VolumeRelatedResources，不能伪造实例 ID。
   return (
     <DataTable<StorageVolumeConsumer>
@@ -14,6 +14,7 @@ export default function VolumeConsumers({ consumers }: VolumeConsumersProps) {
         { title: "命名空间", width: 200, dataIndex: "namespace", ellipsis: true },
       ]}
       data={consumers}
+      noDataElement={consumersKnown ? undefined : <Empty description="使用方状态未知" />}
       pagination={false}
     />
   );

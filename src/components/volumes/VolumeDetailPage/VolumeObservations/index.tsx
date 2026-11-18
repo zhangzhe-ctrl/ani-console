@@ -1,12 +1,17 @@
-import { Space } from "@arco-design/web-react";
+import { Empty, Space } from "@arco-design/web-react";
 import type { StorageVolumeCondition, StorageVolumeEvent } from "@/api/storage/volumes";
 import { DataTable } from "@/components/common";
 import { formatDateTime } from "@/lib/format";
 type VolumeObservationsProps = {
   conditions: StorageVolumeCondition[];
   events: StorageVolumeEvent[];
+  eventsKnown: boolean;
 };
-export default function VolumeObservations({ conditions, events }: VolumeObservationsProps) {
+export default function VolumeObservations({
+  conditions,
+  events,
+  eventsKnown,
+}: VolumeObservationsProps) {
   return (
     <Space direction="vertical" className="w-full" size={16}>
       <DataTable<StorageVolumeCondition>
@@ -30,6 +35,7 @@ export default function VolumeObservations({ conditions, events }: VolumeObserva
         header={{ title: "事件" }}
         pagination={false}
         data={events}
+        noDataElement={eventsKnown ? undefined : <Empty description="事件状态未知" />}
         rowKey={(item) =>
           JSON.stringify([item.type, item.reason, item.message, item.last_timestamp])
         }

@@ -26,9 +26,11 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
   });
   const { actions, dialogNode } = useStorageVolumeActions(goBack);
   if (!detail.data) return <DetailPagePlaceholder loading={detail.isLoading} />;
-  const { volume, consumers, conditions, events } = detail.data;
+  const { volume, consumers, conditions, events, events_known, consumers_known } = detail.data;
   if (!volume) return <DetailPagePlaceholder loading={false} />;
-  const consumerNames = consumers.map((item) => item.name).join("、");
+  const consumerNames = consumers_known
+    ? consumers.map((item) => item.name).join("、") || "-"
+    : "未知";
   return (
     <>
       <DetailPageFrame
@@ -89,7 +91,7 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
               { label: "可用区 / IOPS", value: "-" },
               { label: "自动快照", value: "-" },
               { label: "来源快照", value: "-" },
-              { label: "挂载实例", value: consumerNames || "-" },
+              { label: "挂载实例", value: consumerNames },
               { label: "OS 初始化", value: "-" },
               { label: "约束", value: "使用中不可删 · 扩容不可缩 · 用途不可修改" },
               { label: "创建时间", value: "-" },
@@ -98,11 +100,15 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
           {
             key: "related-summary",
             title: "关联摘要",
-            fields: [{ label: "使用方", value: consumerNames || "-" }],
+            fields: [{ label: "使用方", value: consumerNames }],
           },
         ]}
         tabs={[
-          { key: "related", label: "关联资源", content: <VolumeConsumers consumers={consumers} /> },
+          {
+            key: "related",
+            label: "关联资源",
+            content: <VolumeConsumers consumers={consumers} consumersKnown={consumers_known} />,
+          },
           // TODO(storage-migration): 保留 VolumeSnapshots、VolumeAutoSnapshot、VolumeMountHistory 的旧实现；新 PVC 禁止调用旧接口。
           { key: "snapshots", label: "快照", content: <Empty description="快照暂未接入" /> },
           {
@@ -118,7 +124,13 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
           {
             key: "events",
             label: "事件",
-            content: <VolumeObservations conditions={conditions} events={events} />,
+            content: (
+              <VolumeObservations
+                conditions={conditions}
+                events={events}
+                eventsKnown={events_known}
+              />
+            ),
           },
         ]}
         activeTabKey={tab}

@@ -46,6 +46,11 @@ export interface StorageVolumeDetail {
   conditions: StorageVolumeCondition[];
   events: StorageVolumeEvent[];
   consumers: StorageVolumeConsumer[];
+  // known=false 时对应数组只是空占位，不代表没有数据。
+  events_known: boolean;
+  consumers_known: boolean;
+  events_error_code: string;
+  consumers_error_code: string;
 }
 export interface StorageVolumeListParams extends PageParams {
   name?: string;

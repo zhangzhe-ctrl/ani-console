@@ -13,12 +13,10 @@ export interface AuthTokens {
 
 interface AuthState {
   tokens: AuthTokens | null;
-  hydrated: boolean;
   setAuthSession: (tokens: AuthTokens | null) => void;
   clear: () => void;
   getAccessToken: () => string | null;
   getAccessTokenJti: () => string | null;
-  setHydrated: (hydrated: boolean) => void;
 }
 
 const authStateStorage: StateStorage = {
@@ -66,7 +64,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       tokens: null,
-      hydrated: false,
       setAuthSession: (tokens) => set({ tokens }),
       clear: () => set({ tokens: null }),
       getAccessToken: () => get().tokens?.access_token ?? null,
@@ -74,7 +71,6 @@ export const useAuthStore = create<AuthState>()(
         const token = get().tokens?.access_token;
         return token ? getJwtJti(token) : null;
       },
-      setHydrated: (hydrated) => set({ hydrated }),
     }),
     {
       name: "ani-console-auth",
@@ -83,9 +79,6 @@ export const useAuthStore = create<AuthState>()(
         tokens: state.tokens,
       }),
       skipHydration: true,
-      onRehydrateStorage: () => () => {
-        useAuthStore.setState({ hydrated: true });
-      },
     },
   ),
 );

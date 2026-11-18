@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import { vitePluginForArco } from "@arco-plugins/vite-react";
 import { defineConfig, loadEnv } from "vite";
 import type { ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
@@ -38,6 +39,18 @@ function createDevProxy(routes: DevProxyRoute[]): Record<string, ProxyOptions> {
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const arcoPlugin = vitePluginForArco({ style: "css" });
+  const arcoTransform = arcoPlugin.transform;
+
+  if (command === "build" && typeof arcoTransform === "function") {
+    arcoPlugin.transform = {
+      filter: {
+        id: /\.[jt]sx?$/,
+        code: /@arco-design\/web-react/,
+      },
+      handler: arcoTransform,
+    };
+  }
 
   return {
     plugins: [
@@ -45,11 +58,11 @@ export default defineConfig(({ command, mode }) => {
       tanstackRouter({
         routesDirectory: "./src/routes",
         generatedRouteTree: "./src/routeTree.gen.ts",
-        autoCodeSplitting: true,
         // `src/routes/**/dev/**` is available through the dev server, but never enters a build graph.
         routeFileIgnorePattern: command === "build" ? "^dev$" : undefined,
       }),
       react(),
+      arcoPlugin,
     ],
     resolve: {
       alias: {
@@ -105,13 +118,59 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       target: "esnext",
+      chunkSizeWarningLimit: 1024,
       rolldownOptions: {
         output: {
           codeSplitting: {
-            groups: [{ name: "vendor-tanstack", test: /node_modules.*@tanstack/ }],
+            groups: [
+              {
+                name: "react-vendor",
+                test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+                priority: 20,
+              },
+              {
+                name: "ui-vendor",
+                test: /node_modules[\\/]@arco-design[\\/]web-react[\\/]/,
+                priority: 15,
+              },
+              {
+                name: "echarts-vendor",
+                test: /node_modules[\\/](echarts|zrender)[\\/]/,
+                priority: 15,
+              },
+              {
+                name: "vnc-vendor",
+                test: /node_modules[\\/]@novnc[\\/]novnc[\\/]/,
+                priority: 15,
+              },
+              {
+                name: "terminal-vendor",
+                test: /node_modules[\\/]@xterm[\\/]/,
+                priority: 15,
+              },
+              {
+                name: "chat-vendor",
+                test: /node_modules[\\/](@assistant-ui|remark-gfm|rehype-raw|rehype-sanitize)[\\/]/,
+                priority: 15,
+              },
+              {
+                name: "vendor",
+                test: /node_modules/,
+                priority: 10,
+              },
+              {
+                name: "common",
+                minShareCount: 2,
+                minSize: 10000,
+                priority: 5,
+              },
+            ],
           },
         },
       },
+    },
+    preview: {
+      port: 5173,
     },
   };
 });

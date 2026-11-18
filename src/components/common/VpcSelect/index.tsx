@@ -1,7 +1,11 @@
-import { Button, Select, type SelectProps } from "@arco-design/web-react";
+import { Select, type SelectProps } from "@arco-design/web-react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type { NetworkVPC } from "@/api/network";
-import { useVpcOptions } from "@/hooks/useNetworkSelectionOptions";
+import { listNetworkVpcs, type NetworkVPC } from "@/api/network";
+import { withFirst100 } from "@/api/pagination";
+import { useAuthStore } from "@/stores/auth";
+
+const listVpcOptions = withFirst100(listNetworkVpcs);
 
 type VpcSelectProps = Pick<
   SelectProps,
@@ -23,7 +27,15 @@ export default function VpcSelect({
 }: VpcSelectProps) {
   const [name, setName] = useState("");
   const params = { name: name.trim() || undefined, can_use: canUse, can_manage: canManage };
-  const vpcs = useVpcOptions(params, !disabled);
+  const session = useAuthStore((state) => state.getAccessTokenJti());
+  const vpcs = useQuery({
+    queryKey: ["network-vpcs", "options", session, params],
+    queryFn: ({ signal }) => listVpcOptions(params, signal),
+    enabled: !disabled,
+    refetchOnMount: "always",
+    meta: { errorNotification: { id: "vpc-options", action: "VPC 选项加载" } },
+  });
+  const items = vpcs.data?.items ?? [];
   const [selected, setSelected] = useState<NetworkVPC>();
 
   return (
@@ -41,34 +53,13 @@ export default function VpcSelect({
       filterOption={false}
       inputValue={name}
       onInputValueChange={setName}
-      onVisibleChange={(visible) => {
-        if (visible) vpcs.refresh();
-      }}
       renderFormat={(option) => {
-        const item = vpcs.items.find((candidate) => candidate.id === props.value) ?? selected;
+        const item = items.find((candidate) => candidate.id === props.value) ?? selected;
         return item && item.id === props.value
           ? `${item.name}${item.owner_scope === "platform" ? " · 平台基础网络" : ""} · ${item.cidr || "-"}`
           : (option?.children ?? props.value);
       }}
-      dropdownRender={(menu) => (
-        <>
-          {menu}
-          <div className="flex justify-between p-2" onMouseDown={(event) => event.preventDefault()}>
-            <Button size="mini" onClick={vpcs.refresh} loading={vpcs.isFetching}>
-              刷新
-            </Button>
-            <Button
-              size="mini"
-              disabled={!vpcs.hasNextPage || vpcs.isFetching}
-              loading={vpcs.isFetchingNextPage}
-              onClick={() => vpcs.fetchNextPage()}
-            >
-              {vpcs.hasNextPage ? "加载更多" : "已加载全部"}
-            </Button>
-          </div>
-        </>
-      )}
-      options={vpcs.items.map((vpc) => ({
+      options={items.map((vpc) => ({
         value: vpc.id,
         extra: vpc,
         label: `${vpc.name}${vpc.owner_scope === "platform" ? " · 平台基础网络" : ""} · ${vpc.cidr || "-"}`,

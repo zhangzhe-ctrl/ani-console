@@ -1,6 +1,5 @@
 import { Alert, Form, Input, Modal, Switch } from "@arco-design/web-react";
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "@/api/request";
 import { cloneVm, getVm, type VirtualMachine } from "@/api/vms";
 import { validateForm } from "@/lib/form";
 import { withId } from "@/lib/id";
@@ -49,14 +48,6 @@ export default function VmCloneModal({ vm, onCancel, onSubmitted }: VmCloneModal
         client.invalidateQueries({ queryKey: ["vms", "list"] }),
         client.invalidateQueries({ queryKey: ["vms", vm.id], exact: true }),
       ]);
-    },
-    onError: async (error) => {
-      if (
-        error instanceof ApiError &&
-        (error.code === "VM_VERSION_CONFLICT" || error.message === "VM_VERSION_CONFLICT")
-      ) {
-        await client.invalidateQueries({ queryKey: ["vms", vm.id], exact: true });
-      }
     },
   });
   const busy = pending > 0;

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Modal } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { archiveDataset, restoreDataset, type Dataset } from "@/api/modeldev";
-import { ApiError } from "@/api/request";
 import type { RowAction } from "@/components/common";
 import EditDatasetModal from "@/components/ai-datasets/EditDatasetModal";
 import ImportDatasetVersionModal from "@/components/ai-datasets/ImportDatasetVersionModal";
@@ -37,10 +36,6 @@ export function useDatasetActions() {
       },
     },
     onSuccess: (_, { dataset }) => refresh(dataset.dataset_id),
-    onError: (error, { dataset }) => {
-      if (error instanceof ApiError && error.status === 409 && error.code === "COMMAND_CONFLICT")
-        return refresh(dataset.dataset_id);
-    },
   });
   const actions: RowAction<Dataset>[] = [
     {

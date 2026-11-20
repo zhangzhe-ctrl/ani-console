@@ -1,11 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Form, Modal } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDataset, updateDataset, type Dataset, type UpdateDatasetInput } from "@/api/modeldev";
-import { ApiError } from "@/api/request";
+import { updateDataset, type Dataset, type UpdateDatasetInput } from "@/api/modeldev";
 import { validateForm } from "@/lib/form";
 import { showMessage } from "@/lib/feedback";
-import { withId } from "@/lib/id";
 import DatasetMetadataFields from "../DatasetMetadataFields";
 
 type EditDatasetModalProps = { dataset: Dataset; onCancel: () => void };
@@ -13,7 +11,6 @@ type EditDatasetFormValues = { name: string; description: string };
 
 export default function EditDatasetModal({ dataset, onCancel }: EditDatasetModalProps) {
   const [form] = Form.useForm<EditDatasetFormValues>();
-  const [revision, setRevision] = useState(dataset.revision);
   const submitting = useRef(false);
   const qc = useQueryClient();
   const refresh = () =>
@@ -30,35 +27,13 @@ export default function EditDatasetModal({ dataset, onCancel }: EditDatasetModal
       await refresh();
       onCancel();
     },
-    onError: async (error) => {
-      if (!(error instanceof ApiError) || error.status !== 409 || error.code !== "COMMAND_CONFLICT")
-        return;
-      await refresh();
-      try {
-        const response = await qc.fetchQuery({
-          queryKey: ["dataset", dataset.dataset_id],
-          queryFn: ({ signal }) => getDataset(dataset.dataset_id, signal),
-          staleTime: 0,
-          meta: {
-            errorNotification: {
-              id: withId("dataset", dataset.dataset_id),
-              action: "数据集详情加载",
-            },
-          },
-        });
-        // 保留表单，不自动重新提交。
-        setRevision(response.revision);
-      } catch {
-        // 刷新失败由查询反馈处理，保留原 revision，禁止猜测新值。
-      }
-    },
   });
   const submit = async () => {
     if (submitting.current) return;
     submitting.current = true;
     try {
       const values = await validateForm<EditDatasetFormValues>(form);
-      // 与打开时的值比较，只提交用户改动；冲突刷新不把服务端其他字段覆盖回去。
+      // 只提交与打开表单时不同的字段。
       const name = values.name !== dataset.name ? values.name : undefined;
       const description =
         values.description !== dataset.description ? values.description : undefined;
@@ -67,7 +42,7 @@ export default function EditDatasetModal({ dataset, onCancel }: EditDatasetModal
         return;
       }
       await update.mutateAsync({
-        expected_revision: revision,
+        expected_revision: dataset.revision,
         ...(name !== undefined ? { name } : {}),
         ...(description !== undefined ? { description } : {}),
       });

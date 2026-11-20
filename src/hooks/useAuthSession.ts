@@ -1,14 +1,11 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { showNotification } from "@/lib/feedback";
+import { router } from "@/router";
 import { useAuthStore } from "@/stores/auth";
-import { queryClient } from "../query-client";
-import { router } from "../router";
 
 let authStartup: Promise<void> | undefined;
 
-export function AppRoot() {
+export function useAuthSession() {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
@@ -40,11 +37,5 @@ export function AppRoot() {
     };
   }, []);
 
-  if (!authReady) return null;
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
+  return authReady;
 }

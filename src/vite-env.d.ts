@@ -2,6 +2,7 @@
 /// <reference types="novnc__novnc" />
 
 import "@tanstack/react-query";
+import type { router } from "@/router";
 
 export type QueryErrorNotificationMeta = {
   id: string;
@@ -53,3 +54,9 @@ declare module "@tanstack/react-query" {
 }
 
 declare module "@arco-design/web-react/dist/css/arco.css";
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}

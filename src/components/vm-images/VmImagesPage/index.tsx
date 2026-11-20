@@ -6,22 +6,21 @@ import {
   ListDataTable,
   ListPageFrame,
   ResourceIdentity,
-  StatusBadge,
   type ListColumn,
 } from "@/components/common";
-import type { RowAction } from "@/components/common/DataTable";
 import { useListPagination } from "@/hooks/useListPagination";
+import { useVmImageActions } from "@/hooks/useVmImageActions";
 import { formatDateTime } from "@/lib/format";
 import { withId } from "@/lib/id";
-import { isDateTimeExpired } from "@/lib/date";
 import UploadVmImageModal from "../UploadVmImageModal";
-import { VM_IMAGE_KINDS, VM_IMAGE_REASONS, VM_IMAGE_STATES } from "../options";
+import VmImageStatus from "../VmImageStatus";
+import { VM_IMAGE_KINDS, VM_IMAGE_STATES } from "../options";
 
 export default function VmImagesPage() {
   const [status, setStatus] = useState<VmImageState | "all">("all");
   const [kind, setKind] = useState<VmImageKind | "">("");
   const [searchText, setSearchText] = useState("");
-  const [uploadTarget, setUploadTarget] = useState<{ image?: VmImage } | null>(null);
+  const [adding, setAdding] = useState(false);
   const state = status === "all" ? undefined : status;
   const keyword = searchText.trim() || undefined;
   const { page, pageSize, setPage, setPageSize } = useListPagination(
@@ -34,24 +33,15 @@ export default function VmImagesPage() {
       listVmImages({ page, pageSize, state, kind: kind || undefined, keyword }, signal),
     meta: { errorNotification: { id: "vm-images", action: "虚拟机镜像列表加载" } },
   });
+  const { actions, dialogNode } = useVmImageActions();
   const statusTabs: Array<{ value: VmImageState | "all"; label: string }> = [
     { value: "all", label: "全部" },
     { value: "PREPARING", label: VM_IMAGE_STATES.PREPARING.label },
     { value: "IMPORTING", label: VM_IMAGE_STATES.IMPORTING.label },
-    { value: "VERIFYING", label: VM_IMAGE_STATES.VERIFYING.label },
     { value: "READY", label: VM_IMAGE_STATES.READY.label },
     { value: "FAILED", label: VM_IMAGE_STATES.FAILED.label },
     { value: "UNAVAILABLE", label: VM_IMAGE_STATES.UNAVAILABLE.label },
-  ];
-  const actions: RowAction<VmImage>[] = [
-    {
-      key: "upload",
-      label: "上传文件",
-      visible: (image) =>
-        (image.state === "PREPARING" || image.state === "IMPORTING") &&
-        !isDateTimeExpired(image.uploadDeadline),
-      onClick: (image) => setUploadTarget({ image }),
-    },
+    { value: "DELETING", label: VM_IMAGE_STATES.DELETING.label },
   ];
   const columns: ListColumn<VmImage>[] = [
     {
@@ -88,25 +78,7 @@ export default function VmImagesPage() {
       key: "state",
       title: "状态",
       width: 120,
-      render: (_, image) => {
-        const appearance = VM_IMAGE_STATES[image.state];
-        const reason =
-          image.cleanupState === "BLOCKED"
-            ? VM_IMAGE_REASONS.NATIVE_CLEANUP_BLOCKED
-            : image.reason
-              ? VM_IMAGE_REASONS[image.reason]
-              : undefined;
-        return (
-          <StatusBadge
-            status={image.state}
-            tone={appearance.tone}
-            loading={appearance.loading}
-            reason={reason}
-          >
-            {appearance.label}
-          </StatusBadge>
-        );
-      },
+      render: (_, image) => <VmImageStatus image={image} />,
     },
     {
       key: "sourceCapacityGb",
@@ -133,7 +105,7 @@ export default function VmImagesPage() {
             label: "添加镜像",
             variant: "primary",
             iconClassName: "icon-add-1",
-            onClick: () => setUploadTarget({}),
+            onClick: () => setAdding(true),
           },
         ],
       }}
@@ -183,16 +155,16 @@ export default function VmImagesPage() {
           onPageSizeChange: setPageSize,
         }}
       />
-      {uploadTarget ? (
+      {adding ? (
         <UploadVmImageModal
-          image={uploadTarget.image}
-          onCancel={() => setUploadTarget(null)}
+          onCancel={() => setAdding(false)}
           onSubmitted={() => {
-            if (!uploadTarget.image) setPage(1);
-            setUploadTarget(null);
+            setPage(1);
+            setAdding(false);
           }}
         />
       ) : null}
+      {dialogNode}
     </ListPageFrame>
   );
 }

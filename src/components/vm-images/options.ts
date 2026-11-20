@@ -12,7 +12,6 @@ export const VM_IMAGE_STATES: Record<
 > = {
   PREPARING: { label: "准备中", tone: "primary", loading: true },
   IMPORTING: { label: "导入中", tone: "primary", loading: true },
-  VERIFYING: { label: "校验中", tone: "primary", loading: true },
   READY: { label: "可用", tone: "success", loading: false },
   FAILED: { label: "失败", tone: "danger", loading: false },
   UNAVAILABLE: { label: "不可用", tone: "danger", loading: false },

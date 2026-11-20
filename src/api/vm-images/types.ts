@@ -6,7 +6,6 @@ export type VmImageKind = "DISK_IMAGE" | "INSTALL_ISO";
 export type VmImageState =
   | "PREPARING"
   | "IMPORTING"
-  | "VERIFYING"
   | "READY"
   | "FAILED"
   | "UNAVAILABLE"
@@ -88,6 +87,25 @@ export interface CreateVmImageInput {
 
 export interface CreateVmImageRequest {
   data: CreateVmImageInput & { idempotency_key: string };
+}
+
+export interface UpdateVmImageInput {
+  expected_version: string;
+  name?: string;
+  description?: string;
+}
+
+export interface UpdateVmImageRequest {
+  data: UpdateVmImageInput & { idempotency_key: string };
+  update_mask: string;
+}
+
+export interface DeleteVmImageInput {
+  expected_version: string;
+}
+
+export interface DeleteVmImageRequest {
+  data: DeleteVmImageInput & { idempotency_key: string };
 }
 
 export interface VmImageUploadSessionRequest {

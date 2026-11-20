@@ -12,6 +12,10 @@ import { createIdempotencyScope } from "@/lib/idempotency";
 import type {
   CreateVmImageInput,
   CreateVmImageRequest,
+  DeleteVmImageInput,
+  DeleteVmImageRequest,
+  UpdateVmImageInput,
+  UpdateVmImageRequest,
   UploadVmImageFileInput,
   VmImage,
   VmImageListParams,
@@ -24,6 +28,8 @@ export type * from "./types";
 
 const createScope = createIdempotencyScope("vm-image-create", ["POST"]);
 const sessionScope = createIdempotencyScope("vm-image-upload-session", ["POST"]);
+const updateScope = createIdempotencyScope("vm-image-update", ["PATCH"]);
+const deleteScope = createIdempotencyScope("vm-image-delete", ["DELETE"]);
 const imagePath = (id: string) => `/virtual-machine-images/${encodeURIComponent(id)}`;
 
 async function vmImageRequest<T>(
@@ -44,6 +50,8 @@ async function vmImageRequest<T>(
         VM_IMAGE_NOT_READY: "镜像尚未准备好，请稍后重试",
         VM_IMAGE_NOT_UPLOADABLE: "当前镜像不支持上传文件",
         VM_IMAGE_UPLOAD_DISABLED: "镜像上传暂未开放，请联系管理员",
+        VM_IMAGE_IN_USE: "镜像仍被虚拟机使用，无法删除",
+        VM_VERSION_CONFLICT: "镜像已变更，请刷新列表后重新操作",
         VM_IDEMPOTENCY_CONFLICT: "提交内容发生冲突，请核对镜像记录后重试",
         VM_IMAGE_NATIVE_IDENTITY_CHANGED: "镜像存储目标已变更，请联系管理员",
         VM_IMAGE_DEPENDENCY_UNAVAILABLE: "镜像依赖服务暂不可用，请稍后重试",
@@ -90,6 +98,33 @@ export function createVmImage(input: CreateVmImageInput, file: File, signal: Abo
   );
 }
 
+export function updateVmImage(imageId: string, input: UpdateVmImageInput): Promise<void> {
+  const fields: Array<"name" | "description"> = [];
+  if (input.name !== undefined) fields.push("name");
+  if (input.description !== undefined) fields.push("description");
+  return runIdempotentRequest(
+    updateScope,
+    input,
+    async (data) => {
+      const request: UpdateVmImageRequest = { data, update_mask: fields.join(",") };
+      await vmImageRequest(imagePath(imageId), { method: "PATCH", data: request }, "更新镜像失败");
+    },
+    [imageId],
+  );
+}
+
+export function deleteVmImage(imageId: string, input: DeleteVmImageInput): Promise<void> {
+  return runIdempotentRequest(
+    deleteScope,
+    input,
+    async (data) => {
+      const request: DeleteVmImageRequest = { data };
+      await vmImageRequest(imagePath(imageId), { method: "DELETE", data: request }, "删除镜像失败");
+    },
+    [imageId],
+  );
+}
+
 function waitForUploadTarget(signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     if (signal.aborted) {
@@ -116,10 +151,10 @@ export async function uploadVmImageFile({
   onProgress,
 }: UploadVmImageFileInput): Promise<void> {
   onPhase("preparing");
-  // 每次重试先查询状态，已进入校验或可用态时不重复发送文件。
+  // 每次重试先查询状态，镜像已可用时不重复发送文件。
   for (let attempt = 0; attempt < 60; attempt++) {
     const image = await getVmImage(imageId, signal);
-    if (image.state === "VERIFYING" || image.state === "READY") return;
+    if (image.state === "READY") return;
     if (image.state !== "PREPARING" && image.state !== "IMPORTING") {
       throw new Error("当前镜像已无法上传，请刷新列表查看状态");
     }

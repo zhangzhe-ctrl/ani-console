@@ -1,4 +1,4 @@
-import { Checkbox, Form, Input, InputNumber, Select } from "@arco-design/web-react";
+import { Checkbox, Form, Input, InputNumber, Radio, Select } from "@arco-design/web-react";
 import { MAX_CAPACITY_GIB } from "@/lib/capacity";
 import { VM_IMAGE_KINDS } from "../options";
 
@@ -28,45 +28,51 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
       >
         <Input disabled={disabled} placeholder="例如 Ubuntu 24.04" />
       </Form.Item>
-      <div className="grid grid-cols-2 gap-x-4">
-        <Form.Item
-          field="kind"
-          label="镜像类型"
-          rules={[{ required: true, message: "请选择镜像类型" }]}
-        >
-          <Select
-            disabled={disabled}
-            options={Object.entries(VM_IMAGE_KINDS).map(([value, label]) => ({ value, label }))}
-          />
-        </Form.Item>
-        <Form.Item
-          field="sourceCapacityGib"
-          label="推荐系统盘大小"
-          required
-          tooltip="推荐系统盘大小应满足镜像展开后的空间需求。"
-          rules={[
-            {
-              validator: (value: string | undefined, callback) =>
-                callback(
-                  value && /^[1-9]\d*$/.test(value) && BigInt(value) <= BigInt(MAX_CAPACITY_GIB)
-                    ? undefined
-                    : `推荐系统盘大小须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
-                ),
-            },
-          ]}
-        >
-          <InputNumber
-            strictMode
-            min={1}
-            max={MAX_CAPACITY_GIB}
-            precision={0}
-            suffix="GiB"
-            disabled={disabled}
-            placeholder="请输入推荐系统盘大小"
-            style={{ width: "100%" }}
-          />
-        </Form.Item>
-      </div>
+      <Form.Item
+        field="kind"
+        label="镜像类型"
+        rules={[{ required: true, message: "请选择镜像类型" }]}
+      >
+        <Radio.Group
+          type="button"
+          aria-label="镜像类型"
+          disabled={disabled}
+          options={Object.entries(VM_IMAGE_KINDS).map(([value, label]) => ({ value, label }))}
+        />
+      </Form.Item>
+      <Form.Item noStyle shouldUpdate={(previous, next) => previous.kind !== next.kind}>
+        {(values) =>
+          values.kind !== "DRIVER_ISO" ? (
+            <Form.Item
+              field="sourceCapacityGib"
+              label="推荐系统盘大小"
+              required
+              tooltip="推荐系统盘大小应满足镜像展开后的空间需求。"
+              rules={[
+                {
+                  validator: (value: string | undefined, callback) =>
+                    callback(
+                      value && /^[1-9]\d*$/.test(value) && BigInt(value) <= BigInt(MAX_CAPACITY_GIB)
+                        ? undefined
+                        : `推荐系统盘大小须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
+                    ),
+                },
+              ]}
+            >
+              <InputNumber
+                strictMode
+                min={1}
+                max={MAX_CAPACITY_GIB}
+                precision={0}
+                suffix="GiB"
+                disabled={disabled}
+                placeholder="请输入推荐系统盘大小"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+          ) : null
+        }
+      </Form.Item>
       <div className="grid grid-cols-2 gap-x-4">
         <Form.Item
           field="osFamily"

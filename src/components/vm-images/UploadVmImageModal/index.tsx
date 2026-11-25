@@ -69,13 +69,17 @@ export default function UploadVmImageModal({
               name: values.name.trim(),
               kind: values.kind,
               format: values.kind === "DISK_IMAGE" ? "qcow2" : "iso",
-              source_capacity_bytes: capacityToBytes(values.sourceCapacityGib, "GiB").toString(),
+              source_capacity_bytes:
+                values.kind === "DRIVER_ISO"
+                  ? String(values.file.size)
+                  : capacityToBytes(values.sourceCapacityGib, "GiB").toString(),
               initialization_capability:
                 values.kind === "DISK_IMAGE" &&
                 values.osFamily === "linux" &&
                 values.supportsCloudInit
                   ? "CLOUD_INIT_NOCLOUD"
                   : undefined,
+              // FIXME: 后端允许驱动镜像省略 os_version 后，移除对应表单项和提交值。
               os: { os_family: values.osFamily, os_version: values.osVersion.trim() },
             },
             values.file,

@@ -83,7 +83,7 @@ export default function CreateFineTuningModal({ onCancel }: CreateFineTuningModa
   const [baseVersion, setBaseVersion] = useState<ModelVersion>();
   const [step, setStep] = useState(0);
   const [validating, setValidating] = useState(false);
-  const [errorField, setErrorField] = useState<FineTuningFieldKey>();
+  const [scrollRequest, setScrollRequest] = useState<{ field: FineTuningFieldKey }>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const validationLock = useRef(false);
   const readinessInput =
@@ -161,10 +161,10 @@ export default function CreateFineTuningModal({ onCancel }: CreateFineTuningModa
   );
 
   useEffect(() => {
-    if (!errorField) return;
-    form.scrollToField(errorField, { block: "center", behavior: "smooth" });
-    setErrorField(undefined);
-  }, [errorField, form, step]);
+    if (scrollRequest) {
+      form.scrollToField(scrollRequest.field, { block: "center", behavior: "smooth" });
+    }
+  }, [form, scrollRequest]);
 
   const changeStep = (next: number) => {
     setStep(next);
@@ -251,7 +251,7 @@ export default function CreateFineTuningModal({ onCancel }: CreateFineTuningModa
       if (errorStep >= 0) {
         const field = stepFields[errorStep].find((key) => errors[key]);
         changeStep(errorStep);
-        setErrorField(field);
+        if (field) setScrollRequest({ field });
       }
     } finally {
       validationLock.current = false;

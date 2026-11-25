@@ -43,6 +43,9 @@ export default function UpdateInferenceModal({
       errorNotification: { id: withId("inference-service", serviceId), action: "推理服务详情加载" },
     },
   });
+  if (!snapshot && detail.data && !detail.isFetching && !detail.isError) {
+    setSnapshot(detail.data);
+  }
   const currentVersion = useQuery({
     queryKey: ["model-version", snapshot?.model_version_id],
     enabled: Boolean(snapshot?.model_version_id),
@@ -56,19 +59,17 @@ export default function UpdateInferenceModal({
   });
   const modelId = chosenModelId ?? currentVersion.data?.model.id ?? "";
   useEffect(() => {
-    if (snapshot || !detail.data || detail.isFetching || detail.isError) return;
-    const item = detail.data;
-    setSnapshot(item);
+    if (!snapshot) return;
     form.setFieldsValue({
-      model_version_id: item.model_version_id,
-      engine_type: item.engine_type,
+      model_version_id: snapshot.model_version_id,
+      engine_type: snapshot.engine_type,
       image:
-        item.image_id && item.image_scope
-          ? { image_id: item.image_id, scope: item.image_scope }
+        snapshot.image_id && snapshot.image_scope
+          ? { image_id: snapshot.image_id, scope: snapshot.image_scope }
           : undefined,
-      command: item.command,
+      command: snapshot.command,
     });
-  }, [detail.data, detail.isFetching, detail.isError, form, snapshot]);
+  }, [form, snapshot]);
   const update = useMutation({
     mutationFn: async (input: UpdateInferenceInput) => {
       if (input.model_version_id) {

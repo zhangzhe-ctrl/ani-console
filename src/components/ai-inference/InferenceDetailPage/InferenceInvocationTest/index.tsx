@@ -32,14 +32,19 @@ export default function InferenceInvocationTest({ service }: InferenceInvocation
   const [result, setResult] = useState<InvocationResult>();
   const active = useRef<AbortController | null>(null);
   const submitting = useRef(false);
+  const serviceScope = JSON.stringify([service.id, service.served_model_name]);
+  const [previousServiceScope, setPreviousServiceScope] = useState(serviceScope);
+
+  if (serviceScope !== previousServiceScope) {
+    setPreviousServiceScope(serviceScope);
+    setResult(undefined);
+  }
 
   useEffect(() => {
-    active.current?.abort();
-    setResult(undefined);
     return () => {
       active.current?.abort();
     };
-  }, [service.id, service.served_model_name]);
+  }, [serviceScope]);
 
   const invocation = useMutation({
     retry: false,

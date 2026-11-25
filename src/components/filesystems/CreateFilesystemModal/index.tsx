@@ -35,7 +35,7 @@ export default function CreateFilesystemModal({ onCancel, onCreated }: CreateFil
         errorFallback: "请求失败",
       },
     },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       const trimmedName = name.trim();
       if (!trimmedName) throw new Error("请输入文件存储名称");
       if (!Number.isInteger(sizeGiB) || sizeGiB < 1) throw new Error("容量必须是大于 0 的整数");
@@ -63,7 +63,7 @@ export default function CreateFilesystemModal({ onCancel, onCreated }: CreateFil
       visible
       title="创建文件存储"
       onCancel={onCancel}
-      onOk={() => create.mutateAsync(undefined)}
+      onOk={() => create.mutateAsync()}
       confirmLoading={create.isPending}
       unmountOnExit
     >

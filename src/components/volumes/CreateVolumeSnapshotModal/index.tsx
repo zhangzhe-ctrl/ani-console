@@ -23,7 +23,7 @@ export default function CreateVolumeSnapshotModal({
         errorFallback: "请求失败",
       },
     },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       const trimmedName = name.trim();
       if (!trimmedName) throw new Error("请输入快照名称");
       return createVolumeSnapshot(volumeId, { name: trimmedName });
@@ -40,7 +40,7 @@ export default function CreateVolumeSnapshotModal({
       visible
       title="创建快照"
       onCancel={onCancel}
-      onOk={() => create.mutateAsync(undefined)}
+      onOk={() => create.mutateAsync()}
       confirmLoading={create.isPending}
       unmountOnExit
     >

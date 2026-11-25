@@ -20,7 +20,7 @@ export default function ExpandFilesystemModal({
   const [sizeGiB, setSizeGiB] = useState(filesystem.size_gib + 1);
   const expand = useMutation({
     meta: { feedback: { channel: "message", action: "扩容文件存储", errorFallback: "请求失败" } },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       if (!filesystem) throw new Error("文件存储不存在");
       if (!Number.isInteger(sizeGiB) || sizeGiB <= filesystem.size_gib) {
         throw new Error(`新容量必须大于当前容量 ${filesystem.size_gib} GiB`);
@@ -39,7 +39,7 @@ export default function ExpandFilesystemModal({
       visible
       title="扩容文件存储"
       onCancel={onCancel}
-      onOk={() => expand.mutateAsync(undefined)}
+      onOk={() => expand.mutateAsync()}
       confirmLoading={expand.isPending}
       unmountOnExit
     >

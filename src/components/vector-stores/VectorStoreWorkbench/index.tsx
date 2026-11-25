@@ -6,21 +6,28 @@ import {
 import { DataTable } from "@/components/common";
 import { Alert, Button, Form, Input, InputNumber, Typography } from "@arco-design/web-react";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type VectorStoreWorkbenchProps = { store: VectorStore };
 
 type SearchHit = VectorStoreSearchHit & { content: string };
 
+function buildEmptyVector(dimension: number) {
+  return Array.from({ length: dimension }, () => "0").join(", ");
+}
+
 export default function VectorStoreWorkbench({ store }: VectorStoreWorkbenchProps) {
-  const [searchVector, setSearchVector] = useState("");
+  const { id, dimension } = store;
+  const [vectorSource, setVectorSource] = useState({ id, dimension });
+  const [searchVector, setSearchVector] = useState(() => buildEmptyVector(dimension));
   const [topK, setTopK] = useState(10);
   const [filterKey, setFilterKey] = useState("");
   const [filterValue, setFilterValue] = useState("");
 
-  useEffect(() => {
-    setSearchVector(Array.from({ length: store.dimension }, () => "0").join(", "));
-  }, [store.dimension, store.id]);
+  if (vectorSource.id !== id || !Object.is(vectorSource.dimension, dimension)) {
+    setVectorSource({ id, dimension });
+    setSearchVector(buildEmptyVector(dimension));
+  }
 
   const search = useMutation({
     meta: {
@@ -31,7 +38,7 @@ export default function VectorStoreWorkbench({ store }: VectorStoreWorkbenchProp
         errorFallback: "检索失败",
       },
     },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       const vector = searchVector.split(",").map((value) => Number.parseFloat(value.trim()));
       if (vector.some(Number.isNaN)) throw new Error("查询向量必须为以逗号分隔的数字");
       if (vector.length !== store.dimension) {
@@ -105,11 +112,7 @@ export default function VectorStoreWorkbench({ store }: VectorStoreWorkbenchProp
         </div>
 
         <div className="flex justify-end">
-          <Button
-            type="primary"
-            loading={search.isPending}
-            onClick={() => search.mutateAsync(undefined)}
-          >
+          <Button type="primary" loading={search.isPending} onClick={() => search.mutateAsync()}>
             执行检索
           </Button>
         </div>

@@ -113,6 +113,10 @@ export function Sidebar({
     [activePathname, allLeafKeys],
   );
   const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const [previousNavigation, setPreviousNavigation] = useState<{
+    items: MenuItem[] | null;
+    pathname: string;
+  }>();
   const [hoverExpanded, setHoverExpanded] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const hoverSuppressedAt = useRef<{ x: number; y: number } | null>(null);
@@ -138,18 +142,17 @@ export function Sidebar({
     return () => document.removeEventListener("mousemove", releaseHoverSuppression, true);
   }, []);
 
-  useEffect(() => {
-    if (!items) return;
-    setOpenKeys(items.filter(isGroupItem).map((item) => item.key));
-  }, [items]);
-
-  useEffect(() => {
-    if (!items) return;
-    const ancestors = findActiveAncestors(items, activePathname);
-    if (ancestors && ancestors.length) {
-      setOpenKeys((prev) => Array.from(new Set([...prev, ...ancestors])));
+  if (items !== previousNavigation?.items || activePathname !== previousNavigation.pathname) {
+    setPreviousNavigation({ items, pathname: activePathname });
+    if (items) {
+      const keys =
+        items === previousNavigation?.items
+          ? openKeys
+          : items.filter(isGroupItem).map((item) => item.key);
+      const ancestors = findActiveAncestors(items, activePathname) ?? [];
+      setOpenKeys(ancestors.length ? Array.from(new Set([...keys, ...ancestors])) : keys);
     }
-  }, [activePathname, items]);
+  }
 
   const collapseLabel = collapsed ? "展开侧栏" : "收起侧栏";
 

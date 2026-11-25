@@ -14,6 +14,7 @@ type InstanceLogsProps = {
   instanceType: "vm" | "container" | "gpu_container";
 };
 type StreamStatus = "idle" | "connecting" | "connected";
+type LogStreamState = { scope: string; logs: string; status: StreamStatus };
 
 const LOG_LIMIT = 1000;
 const RETAINED_LINE_LIMIT = 5000;
@@ -24,31 +25,38 @@ export default function InstanceLogs({ instanceId, instanceType }: InstanceLogsP
   // TODO(instance-logs): 沙箱的新日志契约尚未提供，待接口补齐后接入。
   // TODO(governance-instance-logs): 后端提供结构化日志与级别筛选契约后接入；文本块不补造时间/级别，不去重。
   const [request, setRequest] = useState({ follow: false, version: 0 });
-  const [logs, setLogs] = useState("");
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
+  const scope = JSON.stringify([instanceId, instanceType, request.version]);
+  const initialStatus = instanceId ? "connecting" : "idle";
+  const [state, setState] = useState<LogStreamState>({ scope, logs: "", status: initialStatus });
+  if (state.scope !== scope) {
+    setState({ scope, logs: "", status: initialStatus });
+  }
+  const { logs, status: streamStatus } = state;
   const streaming = request.follow && streamStatus !== "idle";
   const text = useMemo(() => normalizeLogText(logs), [logs]);
   useEffect(() => {
-    if (!instanceId) {
-      setStreamStatus("idle");
-      setLogs("");
-      return;
-    }
+    if (!instanceId) return;
     const id = instanceId;
     const streamLogs = instanceType === "vm" ? streamVmLogs : streamInstanceLogs;
     const notificationId = withId("instance-logs", id);
     let cancelled = false;
     const controller = new AbortController();
-    setLogs("");
+    const setStreamStatus = (status: StreamStatus) => {
+      setState((current) => (current.scope === scope ? { ...current, status } : current));
+    };
     const appendLog = (chunk: string) => {
-      if (!cancelled)
-        setLogs((current) =>
-          (current + chunk)
+      if (cancelled) return;
+      setState((current) => {
+        if (current.scope !== scope) return current;
+        return {
+          ...current,
+          logs: (current.logs + chunk)
             .slice(-RETAINED_CHARACTER_LIMIT)
             .split("\n")
             .slice(-RETAINED_LINE_LIMIT)
             .join("\n"),
-        );
+        };
+      });
     };
     async function connect() {
       closeNotification(notificationId);
@@ -110,7 +118,7 @@ export default function InstanceLogs({ instanceId, instanceType }: InstanceLogsP
       cancelled = true;
       controller.abort();
     };
-  }, [instanceId, instanceType, request]);
+  }, [instanceId, instanceType, request, scope]);
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
       <LogToolbar

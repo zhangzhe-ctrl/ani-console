@@ -10,7 +10,7 @@ import {
 import { withId } from "@/lib/id";
 import { Spin } from "@arco-design/web-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import KnowledgeCitationsDrawer from "./KnowledgeCitationsDrawer";
 import KnowledgeConversation from "./KnowledgeConversation";
@@ -59,15 +59,13 @@ export default function KnowledgeChat({
       })),
     [inferenceModels.data?.items],
   );
-  useEffect(() => {
-    if (
-      inferenceServiceName &&
-      inferenceModels.data &&
-      !inferenceModelOptions.some((option) => option.value === inferenceServiceName)
-    ) {
-      setInferenceServiceName(undefined);
-    }
-  }, [inferenceModelOptions, inferenceModels.data, inferenceServiceName]);
+  if (
+    inferenceServiceName &&
+    inferenceModels.data &&
+    !inferenceModelOptions.some((option) => option.value === inferenceServiceName)
+  ) {
+    setInferenceServiceName(undefined);
+  }
   const sessions = useQuery({
     meta: {
       errorNotification: {

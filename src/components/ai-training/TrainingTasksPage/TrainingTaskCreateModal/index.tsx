@@ -55,7 +55,7 @@ export default function TrainingTaskCreateModal({
   const [inputVersion, setInputVersion] = useState<ModelDevInputVersion>();
   const [step, setStep] = useState(1);
   const [validating, setValidating] = useState(false);
-  const [errorField, setErrorField] = useState<TrainingFieldKey>();
+  const [scrollRequest, setScrollRequest] = useState<{ field: TrainingFieldKey }>();
   const validationLock = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const create = useMutation({
@@ -80,10 +80,10 @@ export default function TrainingTaskCreateModal({
     (_, index): TrainingFieldKey => `parameters[${index}]`,
   );
   useEffect(() => {
-    if (!errorField) return;
-    form.scrollToField(errorField, { block: "center", behavior: "smooth" });
-    setErrorField(undefined);
-  }, [errorField, form, step]);
+    if (scrollRequest) {
+      form.scrollToField(scrollRequest.field, { block: "center", behavior: "smooth" });
+    }
+  }, [form, scrollRequest]);
 
   const changeStep = (next: number) => {
     setStep(next);
@@ -149,7 +149,7 @@ export default function TrainingTaskCreateModal({
       const field = fields.find((key) => errors[key]);
       if (field) {
         changeStep(basicFields.includes(field) ? 1 : 2);
-        setErrorField(field);
+        setScrollRequest({ field });
       }
     } finally {
       validationLock.current = false;

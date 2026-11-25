@@ -44,7 +44,7 @@ function parseSseBlock(block: string) {
 
 export function createKnowledgeBaseAdapter(
   kbId: string,
-  sessionIdRef: { current?: string },
+  getSessionRef: () => { current?: string },
   mode: QueryMode,
   topK: number,
   inferenceServiceName: string | undefined,
@@ -52,6 +52,7 @@ export function createKnowledgeBaseAdapter(
 ): ChatModelAdapter {
   return {
     async *run({ messages, abortSignal }) {
+      const sessionIdRef = getSessionRef();
       const question = getLatestQuestion(messages);
       if (!question) throw new Error("请输入问题");
       if (mode === "stream") {

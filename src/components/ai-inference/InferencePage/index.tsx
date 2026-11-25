@@ -15,11 +15,11 @@ import CreateInferenceModal from "../CreateInferenceModal";
 import UpdateInferenceModal from "../UpdateInferenceModal";
 
 export default function InferencePage() {
-  const { actions, editing, closeEditor, onUpdated } = useInferenceActions(() => setPage(1));
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const { actions, editing, closeEditor, onUpdated } = useInferenceActions(() => setPage(1));
   const query = useQuery({
     queryKey: ["inference-services", { page, pageSize }],
     queryFn: ({ signal }) => listInferenceServices({ page, pageSize }, signal),

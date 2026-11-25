@@ -2,7 +2,7 @@ import CreateK8sClusterModal from "@/components/k8s-clusters/CreateK8sClusterMod
 import { useK8sClusterActions } from "@/hooks/useK8sClusterActions";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getK8sClusterKubeconfig, listK8sClusters, type K8sCluster } from "@/api/k8s-clusters";
 import {
   StatusBadge,
@@ -81,9 +81,18 @@ export default function K8sClustersPage() {
     ...clusterActions,
   ];
 
-  useEffect(() => {
+  const selectionScope = JSON.stringify([
+    searchField,
+    searchText,
+    status,
+    pagination.page,
+    pagination.pageSize,
+  ]);
+  const [previousSelectionScope, setPreviousSelectionScope] = useState(selectionScope);
+  if (selectionScope !== previousSelectionScope) {
+    setPreviousSelectionScope(selectionScope);
     setSelectedKeys([]);
-  }, [searchField, searchText, status, pagination.page, pagination.pageSize]);
+  }
 
   const columns: Array<ListColumn<Cluster>> = [
     {

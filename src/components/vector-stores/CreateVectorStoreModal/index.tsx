@@ -9,7 +9,7 @@ import {
 import { withId } from "@/lib/id";
 import { Form, Input, InputNumber, Modal, Select, Typography } from "@arco-design/web-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type CreateVectorStoreModalProps = {
   onCancel: () => void;
@@ -45,10 +45,9 @@ export default function CreateVectorStoreModal({
     () => (models.data?.items ?? []).map((item) => item.served_model_name),
     [models.data?.items],
   );
-  useEffect(() => {
-    if (embeddingModel || !modelOptions[0]) return;
+  if (!embeddingModel && modelOptions[0]) {
     setEmbeddingModel(modelOptions[0]);
-  }, [embeddingModel, modelOptions]);
+  }
 
   const create = useMutation({
     meta: {
@@ -58,7 +57,7 @@ export default function CreateVectorStoreModal({
         errorFallback: "请求失败",
       },
     },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       const trimmedName = name.trim();
       if (!trimmedName) throw new Error("请输入向量存储名称");
       if (!embeddingModel) throw new Error("请选择 向量化模型");
@@ -83,7 +82,7 @@ export default function CreateVectorStoreModal({
       visible
       title="创建向量存储"
       onCancel={onCancel}
-      onOk={() => create.mutateAsync(undefined)}
+      onOk={() => create.mutateAsync()}
       confirmLoading={create.isPending}
       unmountOnExit
     >

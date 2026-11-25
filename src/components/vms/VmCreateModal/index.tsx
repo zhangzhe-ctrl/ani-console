@@ -73,7 +73,7 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
   >([]);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [errorField, setErrorField] = useState<VmCreateFieldKey>();
+  const [scrollRequest, setScrollRequest] = useState<{ field: VmCreateFieldKey }>();
   const scrollRef = useRef<HTMLDivElement>(null);
   const validationLock = useRef(false);
   const qc = useQueryClient();
@@ -122,10 +122,10 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
     ],
   ];
   useEffect(() => {
-    if (!errorField) return;
-    form.scrollToField(errorField, { block: "nearest" });
-    setErrorField(undefined);
-  }, [form, step, errorField]);
+    if (scrollRequest) {
+      form.scrollToField(scrollRequest.field, { block: "nearest" });
+    }
+  }, [form, scrollRequest]);
   const changeStep = (next: number) => {
     setStep(next);
     scrollRef.current?.scrollTo({ top: 0 });
@@ -193,7 +193,8 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
       const errorStep = stepFields.findIndex((fields) => fields.some((field) => errors[field]));
       if (errorStep >= 0) {
         changeStep(errorStep);
-        setErrorField(stepFields[errorStep].find((field) => errors[field]));
+        const field = stepFields[errorStep].find((field) => errors[field]);
+        if (field) setScrollRequest({ field });
       }
     } finally {
       validationLock.current = false;

@@ -59,12 +59,10 @@ export default function SandboxCreateForm({
 
   useEffect(() => {
     if (values.template_id || !items[0]) return;
-    const nextValues = {
+    form.setFieldsValue({
       template_id: items[0].id,
       compute_spec: getTemplateComputeSpec(items[0]),
-    };
-    form.setFieldsValue(nextValues);
-    setValues((current) => ({ ...current, ...nextValues }));
+    });
   }, [form, items, values.template_id]);
 
   const selectTemplate = (templateId: string) => {
@@ -74,7 +72,6 @@ export default function SandboxCreateForm({
       compute_spec: getTemplateComputeSpec(template),
     };
     form.setFieldsValue(nextValues);
-    setValues((current) => ({ ...current, ...nextValues }));
   };
 
   const next = async () => {

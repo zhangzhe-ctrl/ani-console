@@ -25,7 +25,7 @@ export default function CreateFilesystemMountTargetModal({
         errorFallback: "请求失败",
       },
     },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       if (!vpcId) throw new Error("请选择 VPC");
       if (!subnetId) throw new Error("请选择子网");
       return createFilesystemMountTarget(filesystemId, { vpc_id: vpcId, subnet_id: subnetId });
@@ -42,7 +42,7 @@ export default function CreateFilesystemMountTargetModal({
       visible
       title="创建挂载点"
       onCancel={onCancel}
-      onOk={() => create.mutateAsync(undefined)}
+      onOk={() => create.mutateAsync()}
       confirmLoading={create.isPending}
       unmountOnExit
     >

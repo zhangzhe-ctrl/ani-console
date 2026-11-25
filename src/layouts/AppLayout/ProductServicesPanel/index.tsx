@@ -36,24 +36,21 @@ function filterGroup(group: ProductGroup, keyword: string): ProductGroup | null 
 }
 
 export default function ProductServicesPanel({ visible, onClose }: ProductServicesPanelProps) {
+  return visible ? <ProductServicesContent onClose={onClose} /> : null;
+}
+
+function ProductServicesContent({ onClose }: Pick<ProductServicesPanelProps, "onClose">) {
   const navigate = useNavigate();
   const [activeGroupId, setActiveGroupId] = useState("all");
   const [keyword, setKeyword] = useState("");
 
   useEffect(() => {
-    if (!visible) return;
-    setActiveGroupId("all");
-    setKeyword("");
-  }, [visible]);
-
-  useEffect(() => {
-    if (!visible) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, visible]);
+  }, [onClose]);
 
   const visibleGroups = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLocaleLowerCase();
@@ -71,8 +68,6 @@ export default function ProductServicesPanel({ visible, onClose }: ProductServic
     onClose();
     navigate({ to: path });
   };
-
-  if (!visible) return null;
 
   return (
     <div

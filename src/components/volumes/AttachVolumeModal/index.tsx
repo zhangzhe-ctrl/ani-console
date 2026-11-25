@@ -4,7 +4,7 @@ import type { StorageVolume } from "@/api/storage/volumes/legacy";
 import { canMountVolumeMode, VOLUME_MODE_LABELS } from "@/lib/volumes";
 import { Form, Modal, Select, Typography } from "@arco-design/web-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type AttachVolumeModalProps = {
   volume: StorageVolume;
@@ -37,10 +37,9 @@ export default function AttachVolumeModal({
     canMountVolumeMode(volume.volume_mode, item.kind),
   );
 
-  useEffect(() => {
-    if (!instanceId || instanceItems.some((item) => item.id === instanceId)) return;
+  if (instanceId && !instanceItems.some((item) => item.id === instanceId)) {
     setInstanceId("");
-  }, [instanceId, instanceItems]);
+  }
 
   const attach = useMutation({
     meta: {

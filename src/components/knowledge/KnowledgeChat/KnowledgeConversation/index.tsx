@@ -65,7 +65,14 @@ export default function KnowledgeConversation({
   const sessionIdRef = useRef(sessionId);
   const adapter = useMemo(
     () =>
-      createKnowledgeBaseAdapter(kbId, sessionIdRef, mode, topK, inferenceServiceName, onComplete),
+      createKnowledgeBaseAdapter(
+        kbId,
+        () => sessionIdRef,
+        mode,
+        topK,
+        inferenceServiceName,
+        onComplete,
+      ),
     [inferenceServiceName, kbId, mode, onComplete, topK],
   );
   const runtime = useLocalRuntime(adapter, { initialMessages });

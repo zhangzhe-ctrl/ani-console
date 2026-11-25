@@ -5,7 +5,7 @@ import {
 } from "@/api/storage/buckets/legacy";
 import { Button, Radio, Space, Typography } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type BucketAclEditorProps = {
   bucket: StorageBucketRecord;
@@ -14,11 +14,12 @@ type BucketAclEditorProps = {
 
 export default function BucketAclEditor({ bucket, onSaved }: BucketAclEditorProps) {
   const queryClient = useQueryClient();
+  const [aclSource, setAclSource] = useState({ id: bucket.id, acl: bucket.acl });
   const [acl, setAcl] = useState<StorageBucketAcl>(bucket.acl ?? "private");
-
-  useEffect(() => {
+  if (aclSource.id !== bucket.id || aclSource.acl !== bucket.acl) {
+    setAclSource({ id: bucket.id, acl: bucket.acl });
     setAcl(bucket.acl ?? "private");
-  }, [bucket.acl, bucket.id]);
+  }
 
   const updateAcl = useMutation({
     meta: {

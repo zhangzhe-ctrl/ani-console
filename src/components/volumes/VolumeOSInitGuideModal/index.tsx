@@ -28,7 +28,7 @@ export default function VolumeOSInitGuideModal({
   });
   const complete = useMutation({
     meta: { feedback: { channel: "message", action: "初始化确认", errorFallback: "请求失败" } },
-    mutationFn: (_: undefined) => completeVolumeOSInit(volumeId, { mode: "done" }),
+    mutationFn: () => completeVolumeOSInit(volumeId, { mode: "done" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["volume", volumeId] });
       qc.invalidateQueries({ queryKey: ["volume-os-init-guide", volumeId] });
@@ -47,7 +47,7 @@ export default function VolumeOSInitGuideModal({
             type="primary"
             loading={complete.isPending}
             disabled={!guide.data}
-            onClick={() => complete.mutateAsync(undefined)}
+            onClick={() => complete.mutateAsync()}
           >
             标记已完成
           </Button>

@@ -68,7 +68,7 @@ export default function GpuContainerCreateModal({
   const [values, setValues] = useState(INITIAL);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [errorField, setErrorField] = useState<ContainerCreateFieldKey>();
+  const [scrollRequest, setScrollRequest] = useState<{ field: ContainerCreateFieldKey }>();
   const [metadataExpanded, setMetadataExpanded] = useState(false);
   const [vpc, setVpc] = useState<NetworkVPC>();
   const [subnet, setSubnet] = useState<NetworkSubnet>();
@@ -103,10 +103,10 @@ export default function GpuContainerCreateModal({
     ]),
   ];
   useEffect(() => {
-    if (!errorField) return;
-    form.scrollToField(errorField, { block: "nearest" });
-    setErrorField(undefined);
-  }, [form, step, errorField, metadataExpanded]);
+    if (scrollRequest) {
+      form.scrollToField(scrollRequest.field, { block: "nearest" });
+    }
+  }, [form, scrollRequest]);
   const changeStep = (next: number) => {
     setStep(next);
     scrollRef.current?.scrollTo({ top: 0 });
@@ -154,7 +154,7 @@ export default function GpuContainerCreateModal({
         if (field?.startsWith("labels") || field?.startsWith("annotations"))
           setMetadataExpanded(true);
         changeStep(errorStep);
-        setErrorField(field);
+        if (field) setScrollRequest({ field });
       }
     } finally {
       lock.current = false;

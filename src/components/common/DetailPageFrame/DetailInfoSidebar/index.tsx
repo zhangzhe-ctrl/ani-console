@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import DetailInfoCard from "../DetailInfoCard";
 import styles from "./index.module.css";
 import type { DetailCard } from "..";
@@ -18,12 +18,13 @@ export default function DetailInfoSidebar({ cards, collapsed }: DetailInfoSideba
   const cardsSignature = JSON.stringify(
     cards.map((card) => [card.key, Boolean(card.defaultCollapsed)]),
   );
-  const initialCollapsed = useMemo(() => buildInitialCollapsed(cardsSignature), [cardsSignature]);
-  const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>(initialCollapsed);
+  const [previousSignature, setPreviousSignature] = useState(cardsSignature);
+  const [collapsedCards, setCollapsedCards] = useState(() => buildInitialCollapsed(cardsSignature));
 
-  useEffect(() => {
-    setCollapsedCards(initialCollapsed);
-  }, [initialCollapsed]);
+  if (cardsSignature !== previousSignature) {
+    setPreviousSignature(cardsSignature);
+    setCollapsedCards(buildInitialCollapsed(cardsSignature));
+  }
 
   const expandedCardCount = cards.reduce(
     (count, card) => count + (collapsedCards[card.key] ? 0 : 1),

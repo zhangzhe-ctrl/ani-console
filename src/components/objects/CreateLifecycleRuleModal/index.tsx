@@ -27,7 +27,7 @@ export default function CreateLifecycleRuleModal({
   const [enabled, setEnabled] = useState<boolean>(rule?.enabled ?? true);
   const create = useMutation({
     meta: { feedback: { channel: "message", action: "创建", errorFallback: "请求失败" } },
-    mutationFn: async (_: undefined) => {
+    mutationFn: async () => {
       if (!name.trim()) throw new Error("请输入规则名称");
       return createBucketLifecycleRule(bucketId, {
         name: name.trim(),
@@ -48,7 +48,7 @@ export default function CreateLifecycleRuleModal({
       visible
       title={rule ? "编辑生命周期规则" : "添加生命周期规则"}
       onCancel={onCancel}
-      onOk={() => create.mutateAsync(undefined)}
+      onOk={() => create.mutateAsync()}
       confirmLoading={create.isPending}
       unmountOnExit
     >

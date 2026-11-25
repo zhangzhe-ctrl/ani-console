@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { QueryErrorNotificationMeta } from "@/vite-env";
 import type { ListPagination } from "@/components/common/DataTable";
 
@@ -33,7 +33,6 @@ export function useCursorPaginatedQuery<T>({
   });
   const current =
     window.scope === scope ? window : { ...window, scope, page: 1, cursors: [undefined] };
-  if (window.scope !== scope) setWindow(current);
   const { page, pageSize, cursors } = current;
   const cursor = cursors[page - 1];
   const resetPagination = useCallback(() => {
@@ -48,12 +47,12 @@ export function useCursorPaginatedQuery<T>({
     meta: { errorNotification },
     queryFn: ({ signal }) => queryFn({ cursor, limit: pageSize }, signal),
   });
-  // A deletion can empty the last page. Fetch the previous page instead of trapping the user.
-  useEffect(() => {
-    if (query.isSuccess && !query.isFetching && !query.data.items.length && page > 1) {
-      setWindow((value) => ({ ...value, page: value.page - 1 }));
-    }
-  }, [query.isSuccess, query.isFetching, query.data, page]);
+  if (window.scope !== scope) {
+    setWindow(current);
+  } else if (query.isSuccess && !query.isFetching && !query.data.items.length && page > 1) {
+    // A deletion can empty the last page. Fetch the previous page instead of trapping the user.
+    setWindow({ ...current, page: page - 1 });
+  }
   const { refetch } = query;
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey, refetchType: "none" });

@@ -2,7 +2,7 @@
 import { listInstances, type InstanceRecord } from "@/api/instances/legacy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, Input, InputNumber, Modal, Select, Switch } from "@arco-design/web-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   createVolume,
   type StorageVolume,
@@ -51,10 +51,9 @@ export default function CreateVolumeModal({ onCancel, onCreated }: CreateVolumeM
   const instanceItems = ((instances.data?.items ?? []) as Instance[]).filter((item) =>
     canMountVolumeMode(volumeMode, item.kind),
   );
-  useEffect(() => {
-    if (!mountInstanceId || instanceItems.some((item) => item.id === mountInstanceId)) return;
+  if (mountInstanceId && !instanceItems.some((item) => item.id === mountInstanceId)) {
     setMountInstanceId("");
-  }, [instanceItems, mountInstanceId]);
+  }
 
   const create = useMutation({
     meta: {

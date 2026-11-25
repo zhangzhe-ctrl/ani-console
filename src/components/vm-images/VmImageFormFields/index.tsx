@@ -41,16 +41,16 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
         </Form.Item>
         <Form.Item
           field="sourceCapacityGib"
-          label="源卷容量"
+          label="推荐系统盘大小"
           required
-          tooltip="用于存放镜像的源卷容量，应满足镜像展开后的空间需求。"
+          tooltip="推荐系统盘大小应满足镜像展开后的空间需求。"
           rules={[
             {
               validator: (value: string | undefined, callback) =>
                 callback(
                   value && /^[1-9]\d*$/.test(value) && BigInt(value) <= BigInt(MAX_CAPACITY_GIB)
                     ? undefined
-                    : `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
+                    : `推荐系统盘大小须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
                 ),
             },
           ]}
@@ -62,7 +62,7 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
             precision={0}
             suffix="GiB"
             disabled={disabled}
-            placeholder="请输入容量"
+            placeholder="请输入推荐系统盘大小"
             style={{ width: "100%" }}
           />
         </Form.Item>

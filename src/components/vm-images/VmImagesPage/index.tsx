@@ -87,7 +87,7 @@ export default function VmImagesPage() {
     },
     {
       key: "source_capacity_bytes",
-      title: "源卷容量",
+      title: "推荐系统盘大小",
       width: 160,
       render: (_, image) => <CapacityText bytes={image.source_capacity_bytes} />,
     },

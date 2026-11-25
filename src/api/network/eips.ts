@@ -4,6 +4,7 @@ import { createIdempotencyScope } from "@/lib/idempotency";
 import type {
   CreateNetworkEipInput,
   CreateNetworkEipRequest,
+  NetworkEip,
   NetworkEipListParams,
   NetworkEipListResponse,
   NetworkSecurityGroupBindingResponse,
@@ -31,6 +32,10 @@ export function createNetworkEip(
       signal,
     });
   });
+}
+
+export function deleteNetworkEip(id: string, signal?: AbortSignal): Promise<NetworkEip> {
+  return coreRequest<NetworkEip>(eipPath(id), { method: "DELETE", signal });
 }
 
 export function getEipSecurityGroups(id: string, signal?: AbortSignal) {

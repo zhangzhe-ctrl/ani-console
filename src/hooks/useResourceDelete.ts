@@ -1,5 +1,6 @@
 import { Modal } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteNetworkEip } from "@/api/network";
 import { deleteNetworkVpc } from "@/api/network";
 import { deleteNetworkSubnet } from "@/api/network";
 import { deleteNetworkSecurityGroup } from "@/api/network";
@@ -12,6 +13,7 @@ import type { MutationFeedbackMeta } from "@/vite-env";
 type ResourceDeleteTarget = {
   id?: string;
   name?: string;
+  address?: string;
 };
 type DeleteConfig = {
   listQueryKey: string;
@@ -63,6 +65,21 @@ const resourceDeletion = {
     title: "删除安全组",
     content: (item) => `确定删除「${item.name}」？安全组被资源使用时无法删除，请先解除关联。`,
     remove: deleteNetworkSecurityGroup,
+  },
+  eip: {
+    listQueryKey: "network-eips",
+    detailQueryKey: "network-eip",
+    feedback: {
+      channel: "notification",
+      id: "eip-release",
+      action: "释放公网 IP",
+      successText: "公网 IP 释放已提交",
+      errorFallback: "请求失败",
+    },
+    title: "释放公网 IP",
+    content: (item) => `确定释放公网 IP「${item.address || item.name || item.id}」？`,
+    // TODO: 资源异步操作跟踪统一接入后，通过 last_operation_id 查询释放终态。
+    remove: deleteNetworkEip,
   },
   "load-balancer": {
     listQueryKey: "network-load-balancers",

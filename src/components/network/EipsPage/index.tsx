@@ -9,9 +9,15 @@ import {
   type ListColumn,
 } from "@/components/common";
 import { useCursorPaginatedQuery } from "@/hooks/useCursorPaginatedQuery";
+import { useResourceDelete } from "@/hooks/useResourceDelete";
 import { formatDateTime } from "@/lib/format";
 import CreateEipModal from "../CreateEipModal";
 import EipBindingStatus from "../EipBindingStatus";
+
+const releaseStatusLabels: Partial<Record<string, string>> = {
+  deleting: "释放中",
+  deleted: "已释放",
+};
 
 export default function EipsPage() {
   const [securityGroupsEip, setSecurityGroupsEip] = useState<NetworkEip>();
@@ -38,6 +44,13 @@ export default function EipsPage() {
           signal,
         ),
     });
+  const release = useResourceDelete<NetworkEip>("eip", resetPagination, {
+    isDisabled: (item) =>
+      item.state === "deleting" ||
+      item.state === "deleted" ||
+      item.binding_state === "bound" ||
+      item.binding_state === "reserved",
+  });
   const columns: Array<ListColumn<NetworkEip>> = [
     {
       key: "name",
@@ -58,7 +71,11 @@ export default function EipsPage() {
       key: "state",
       title: "状态",
       width: 120,
-      render: (_, item) => <StatusBadge status={item.state} reason={item.reason} />,
+      render: (_, item) => (
+        <StatusBadge status={item.state} reason={item.reason}>
+          {releaseStatusLabels[item.state]}
+        </StatusBadge>
+      ),
     },
     {
       key: "binding-state",
@@ -135,6 +152,14 @@ export default function EipsPage() {
               label: "更换安全组",
               disabled: (eip) => ["deleted", "deleting"].includes(eip.state),
               onClick: setSecurityGroupsEip,
+            },
+            {
+              key: "release",
+              label: "释放",
+              intent: "danger",
+              disabled: release.isDisabled,
+              loading: (item) => release.isPending && release.variables?.id === item.id,
+              onClick: release.confirm,
             },
           ]}
           tableLabel="公网 IP 列表"

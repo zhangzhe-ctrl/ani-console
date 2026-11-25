@@ -4,6 +4,7 @@ import type { StatusBadgeTone } from "@/components/common";
 export const VM_IMAGE_KINDS: Record<VmImageKind, string> = {
   DISK_IMAGE: "磁盘镜像",
   INSTALL_ISO: "安装镜像（ISO）",
+  DRIVER_ISO: "驱动镜像（ISO）",
 };
 
 export const VM_IMAGE_STATES: Record<

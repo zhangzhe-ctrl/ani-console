@@ -8,12 +8,19 @@ import { vmIsClosed } from "@/lib/vms";
 type VmSetMediaModalProps = {
   vm: VirtualMachine;
   slot: VmMediaSlot;
+  action: string;
   onCancel: () => void;
   onSubmitted: () => void;
 };
 type VmSetMediaFormValues = { mediaKey: string };
 
-export default function VmSetMediaModal({ vm, slot, onCancel, onSubmitted }: VmSetMediaModalProps) {
+export default function VmSetMediaModal({
+  vm,
+  slot,
+  action,
+  onCancel,
+  onSubmitted,
+}: VmSetMediaModalProps) {
   const [form] = Form.useForm<VmSetMediaFormValues>();
   const media = useQuery({
     queryKey: ["vm-media"],
@@ -22,17 +29,23 @@ export default function VmSetMediaModal({ vm, slot, onCancel, onSubmitted }: VmS
   });
   const mutation = useVMMutation<VmSetMediaFormValues>({
     vmId: vm.id,
-    action: "加载镜像",
+    action,
     actionId: "vm-media-set",
     onSubmitted,
     mutationFn: (values) =>
       setVmMedia(vm.id, slot, { expected_version: vm.version, media_key: values.mediaKey }),
   });
   const kind = slot === "INSTALL" ? "INSTALL_ISO" : "DRIVER_ISO";
+  const osFamily = vm.sourceMedia?.osFamily || vm.osFamily;
+  const options = (media.data?.items ?? [])
+    .filter(
+      (item) => item.kind === kind && item.osFamily === osFamily && item.architecture === "amd64",
+    )
+    .map((item) => ({ value: item.mediaKey, label: item.name }));
   return (
     <Modal
       visible
-      title={`加载/更换镜像 · ${vm.name}`}
+      title={`${action} · ${vm.name}`}
       onCancel={onCancel}
       confirmLoading={mutation.isPending}
       okButtonProps={{ disabled: vmIsClosed(vm) || mutation.busy || media.isFetching }}
@@ -53,9 +66,7 @@ export default function VmSetMediaModal({ vm, slot, onCancel, onSubmitted }: VmS
             { required: true, message: "请选择 ISO 镜像" },
             {
               validator: (value, callback) => {
-                if (
-                  !media.data?.items.some((item) => item.mediaKey === value && item.kind === kind)
-                )
+                if (!options.some((option) => option.value === value))
                   callback("请选择对应用途的可用 ISO 镜像");
               },
             },
@@ -65,11 +76,7 @@ export default function VmSetMediaModal({ vm, slot, onCancel, onSubmitted }: VmS
             loading={media.isFetching}
             filterOption={false}
             placeholder="请选择 ISO 镜像"
-            options={(media.data?.items ?? []).map((item) => ({
-              value: item.mediaKey,
-              label: `${item.name} · ${item.kind === "INSTALL_ISO" ? "安装镜像" : item.kind === "DRIVER_ISO" ? "驱动镜像" : "系统镜像"} · ${item.mediaKey}`,
-              disabled: item.kind !== kind,
-            }))}
+            options={options}
           />
         </Form.Item>
       </Form>

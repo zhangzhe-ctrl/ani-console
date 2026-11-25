@@ -178,6 +178,7 @@ export type CreateVmInput =
       source_kind: "DISK_IMAGE" | "INSTALL_ISO";
       preset_id: string;
       media_key: string;
+      driver_media_key?: string;
       system_disk_size_bytes: string;
       data_disks: VmInitialDisk[];
       network: { vpc_id: string; subnet_id: string };
@@ -190,13 +191,13 @@ export type CreateVmInput =
       name: string;
       source_kind: "VM_CLONE";
       clone_source: Pick<CloneVmInput, "source_vm_id" | "expected_source_version">;
-      start_after_create: boolean;
+      driver_media_key?: never;
+      start_after_create?: never;
     };
 export interface CloneVmInput {
   name: string;
   source_vm_id: string;
   expected_source_version: number;
-  start_after_create: boolean;
 }
 export interface VmChangeInput {
   expected_version: string;

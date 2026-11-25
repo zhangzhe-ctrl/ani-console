@@ -70,10 +70,11 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
       <div className="grid grid-cols-2 gap-x-4">
         <Form.Item
           field="osFamily"
-          label="操作系统"
-          rules={[{ required: true, message: "请选择操作系统" }]}
+          label="操作系统类型"
+          rules={[{ required: true, message: "请选择操作系统类型" }]}
         >
           <Select
+            aria-label="操作系统类型"
             disabled={disabled}
             options={[
               { value: "linux", label: "Linux" },
@@ -83,22 +84,22 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
         </Form.Item>
         <Form.Item
           field="osVersion"
-          label="系统版本"
+          label="操作系统版本"
           required
           rules={[
             {
               validator: (value: string | undefined, callback) =>
                 callback(
                   !value?.trim()
-                    ? "请输入系统版本"
+                    ? "请输入操作系统版本"
                     : [...value.trim()].length > 40
-                      ? "系统版本最多 40 个字符"
+                      ? "操作系统版本最多 40 个字符"
                       : undefined,
                 ),
             },
           ]}
         >
-          <Input disabled={disabled} placeholder="例如 24.04" />
+          <Input disabled={disabled} placeholder="例如 Ubuntu 24.04" />
         </Form.Item>
       </div>
       <Form.Item
@@ -119,22 +120,6 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
             </Form.Item>
           ) : null
         }
-      </Form.Item>
-      <Form.Item
-        field="description"
-        label="描述"
-        rules={[
-          {
-            validator: (value: string | undefined, callback) =>
-              callback([...(value ?? "")].length > 512 ? "描述最多 512 个字符" : undefined),
-          },
-        ]}
-      >
-        <Input.TextArea
-          disabled={disabled}
-          placeholder="选填"
-          autoSize={{ minRows: 2, maxRows: 4 }}
-        />
       </Form.Item>
     </>
   );

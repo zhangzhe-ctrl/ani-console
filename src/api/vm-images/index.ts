@@ -162,6 +162,8 @@ export async function uploadVmImageFile({
       throw new Error("镜像上传窗口已过期，请重新添加镜像");
     if (file.size <= 0) throw new Error("不能上传空文件");
     let ticket: VmImageUploadSession;
+    // 每次取票使用新的幂等键，包括上传目标尚未就绪后的重试。
+    const sessionDependencies = [imageId, Symbol()];
     try {
       // 票据只在本次调用的内存中持有，不进入 Query、日志或持久存储。
       ticket = await runIdempotentRequest(
@@ -175,9 +177,10 @@ export async function uploadVmImageFile({
             "获取上传凭证失败，请稍后重试",
           );
         },
-        [imageId, file.name, file.size, file.lastModified, file.type],
+        sessionDependencies,
       );
     } catch (error) {
+      sessionScope.reset(sessionDependencies);
       if (
         error instanceof ApiError &&
         error.status === 409 &&
@@ -195,7 +198,6 @@ export async function uploadVmImageFile({
     onPhase("uploading");
     try {
       await externalAxios.request({
-        // 上传路径固定，上游地址由代理配置，不使用票据中的集群内地址。
         url: "/api/uploads/vm-images",
         method: ticket.method,
         data: file,
@@ -229,4 +231,17 @@ export async function uploadVmImageFile({
     return;
   }
   throw new Error("镜像上传目标准备超时，请稍后从列表继续上传");
+}
+
+export async function waitForVmImageReady(imageId: string, signal: AbortSignal): Promise<void> {
+  for (let attempt = 0; attempt < 150; attempt++) {
+    const image = await getVmImage(imageId, signal);
+    if (image.state === "READY") return;
+    if (image.state !== "PREPARING" && image.state !== "IMPORTING") {
+      const reason = image.reason ? `（${image.reason}）` : "";
+      throw new Error(`镜像未导入成功${reason}，请查看镜像状态`);
+    }
+    await waitForUploadTarget(signal);
+  }
+  throw new Error("文件已上传，等待镜像导入超时，可稍后查看镜像状态");
 }

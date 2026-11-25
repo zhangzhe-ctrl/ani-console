@@ -99,7 +99,6 @@ export function cloneVm(input: CloneVmInput): Promise<void> {
       source_vm_id: input.source_vm_id,
       expected_source_version: input.expected_source_version,
     },
-    start_after_create: input.start_after_create,
   });
 }
 

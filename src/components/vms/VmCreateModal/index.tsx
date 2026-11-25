@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Form } from "@arco-design/web-react";
-import { createVm, listVmMedia, type VmDns, type VmSourceKind } from "@/api/vms";
+import { createVm, listVmMedia, type VmDns, type VmMedia, type VmSourceKind } from "@/api/vms";
 import type { InstancePreset } from "@/api/instances";
 import type { NetworkSecurityGroup, NetworkSubnet, NetworkVPC } from "@/api/network";
 import WizardModal from "@/components/common/WizardModal";
@@ -19,6 +19,7 @@ export type VmCreateFormValues = {
   preset?: InstancePreset;
   source_kind: VmSourceKind;
   media_key: string;
+  driver_media_key: string;
   systemDiskSizeGib: number;
   data_disks: VmInitialDiskFormValues[];
   vpc_id: string;
@@ -44,6 +45,7 @@ const INITIAL: VmCreateFormValues = {
   name: "",
   source_kind: "DISK_IMAGE",
   media_key: "",
+  driver_media_key: "",
   systemDiskSizeGib: 30,
   data_disks: [],
   vpc_id: "",
@@ -58,6 +60,14 @@ const INITIAL: VmCreateFormValues = {
   password: "",
   ssh_public_key: "",
 };
+
+function canUseDriverImage(driver: VmMedia | undefined, systemMedia: VmMedia | undefined) {
+  return (
+    driver?.architecture === "amd64" &&
+    driver.osFamily === systemMedia?.osFamily &&
+    driver.mediaKey.startsWith("vmimg:")
+  );
+}
 
 export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProps) {
   const [form] = Form.useForm<VmCreateFormValues, VmCreateFieldValue, VmCreateFieldKey>();
@@ -78,7 +88,14 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
     queryFn: ({ signal }) => listVmMedia(signal),
     meta: { errorNotification: { id: "vm-media", action: "云主机介质加载" } },
   });
-  const selected = media.data?.items.find((item) => item.mediaKey === values.media_key);
+  const mediaItems = media.data?.items ?? [];
+  const selected = mediaItems.find((item) => item.mediaKey === values.media_key);
+  const driverMedia = mediaItems.filter((item) => item.kind === "DRIVER_ISO");
+  const driverOptions = driverMedia.map((driver) => ({
+    value: driver.mediaKey,
+    label: driver.name,
+    disabled: !canUseDriverImage(driver, selected),
+  }));
   const canInitialize =
     selected?.kind === "DISK_IMAGE" &&
     selected.osFamily === "linux" &&
@@ -100,6 +117,7 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
       "name",
       "source_kind",
       "media_key",
+      "driver_media_key",
       "preset",
       "systemDiskSizeGib",
       "data_disks",
@@ -152,13 +170,14 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
         changeStep(step + 1);
         return;
       }
-      const source = media.data?.items.find((item) => item.mediaKey === current.media_key);
+      const source = mediaItems.find((item) => item.mediaKey === current.media_key);
       if (!current.preset || !source || source.kind === "DRIVER_ISO") return;
       await create.mutateAsync({
         name: current.name.trim(),
         preset_id: current.preset.id,
         source_kind: source.kind,
         media_key: current.media_key,
+        ...(current.driver_media_key ? { driver_media_key: current.driver_media_key } : {}),
         system_disk_size_bytes: capacityToBytes(current.systemDiskSizeGib, "GiB").toString(),
         data_disks: current.data_disks.map((disk) => ({
           client_disk_key: disk.client_disk_key,
@@ -240,6 +259,16 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
           if ("source_kind" in changed) reset.media_key = "";
           if ("source_kind" in changed || "media_key" in changed) {
             reset.login_method = "PASSWORD";
+            const nextSystemMedia = mediaItems.find(
+              (item) => item.mediaKey === (reset.media_key ?? next.media_key),
+            );
+            const driverImage = driverMedia.find(
+              (driver) => driver.mediaKey === next.driver_media_key,
+            );
+            if (next.driver_media_key && !canUseDriverImage(driverImage, nextSystemMedia)) {
+              reset.driver_media_key = "";
+              clear.push("driver_media_key");
+            }
           }
           if (
             "source_kind" in changed ||
@@ -272,8 +301,9 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
         <div hidden={step !== 0}>
           <VmComputeFields
             values={values}
-            media={media.data?.items ?? []}
+            media={mediaItems}
             loading={media.isFetching}
+            driverOptions={driverOptions}
           />
         </div>
         <div hidden={step !== 1}>
@@ -297,6 +327,9 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
         <VmCreateSummary
           values={values}
           media={selected}
+          driverName={
+            driverOptions.find((option) => option.value === values.driver_media_key)?.label
+          }
           canInitialize={canInitialize}
           vpcName={selectedVpc?.name}
           subnetName={selectedSubnet?.name}

@@ -1,4 +1,4 @@
-import { Alert, Form, Input, Modal, Switch } from "@arco-design/web-react";
+import { Alert, Form, Input, Modal } from "@arco-design/web-react";
 import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cloneVm, getVm, type VirtualMachine } from "@/api/vms";
 import { validateForm } from "@/lib/form";
@@ -10,7 +10,7 @@ type VmCloneModalProps = {
   onCancel: () => void;
   onSubmitted: () => void;
 };
-type VmCloneFormValues = { name: string; startAfterCreate: boolean };
+type VmCloneFormValues = { name: string };
 
 export default function VmCloneModal({ vm, onCancel, onSubmitted }: VmCloneModalProps) {
   const [form] = Form.useForm<VmCloneFormValues>();
@@ -38,7 +38,6 @@ export default function VmCloneModal({ vm, onCancel, onSubmitted }: VmCloneModal
         name: values.name.trim(),
         source_vm_id: current.id,
         expected_source_version: Number(current.version),
-        start_after_create: values.startAfterCreate,
       }),
     meta: { feedback: { channel: "message", action: "克隆云主机", successText: "创建已提交" } },
     onSuccess: async () => {
@@ -69,16 +68,11 @@ export default function VmCloneModal({ vm, onCancel, onSubmitted }: VmCloneModal
         await mutation.mutateAsync(await validateForm(form));
       }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        disabled={busy}
-        initialValues={{ startAfterCreate: false }}
-      >
+      <Form form={form} layout="vertical" disabled={busy}>
         <Alert
           className="mb-4"
           type="info"
-          content="规格、磁盘、网络、DNS 和安全组继承源云主机，不支持覆盖；不会重新注入登录凭据。自动开机将在克隆登记完成后执行。"
+          content="规格、磁盘、网络、DNS 和安全组继承源云主机，不支持覆盖；不会重新注入登录凭据。"
         />
         <Form.Item
           field="name"
@@ -93,9 +87,6 @@ export default function VmCloneModal({ vm, onCancel, onSubmitted }: VmCloneModal
           ]}
         >
           <Input maxLength={128} placeholder="请输入新云主机名称" />
-        </Form.Item>
-        <Form.Item field="startAfterCreate" label="创建后自动开机" triggerPropName="checked">
-          <Switch />
         </Form.Item>
       </Form>
     </Modal>

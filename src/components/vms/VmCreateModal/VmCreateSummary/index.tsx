@@ -8,6 +8,7 @@ import type { VmCreateFormValues } from "..";
 type VmCreateSummaryProps = {
   values: VmCreateFormValues;
   media?: VmMedia;
+  driverName?: string;
   canInitialize: boolean;
   vpcName?: string;
   subnetName?: string;
@@ -17,6 +18,7 @@ type VmCreateSummaryProps = {
 export default function VmCreateSummary({
   values,
   media,
+  driverName,
   canInitialize,
   vpcName,
   subnetName,
@@ -39,6 +41,10 @@ export default function VmCreateSummary({
         {
           label: values.source_kind === "DISK_IMAGE" ? "系统镜像" : "安装镜像（ISO）",
           value: media?.name || "-",
+        },
+        {
+          label: "驱动镜像（ISO）",
+          value: driverName ?? (values.driver_media_key ? "-" : "不挂载"),
         },
         { label: "实例规格", value: values.preset?.name || "-" },
         {

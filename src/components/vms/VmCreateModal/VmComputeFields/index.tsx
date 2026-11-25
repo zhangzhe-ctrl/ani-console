@@ -4,14 +4,21 @@ import { ComputePresetSelect } from "@/components/common";
 import { MAX_CAPACITY_GIB } from "@/lib/capacity";
 import VmInitialDiskEditor from "../../VmInitialDiskEditor";
 import type { VmCreateFormValues } from "..";
+import VmDriverImageField, { type VmDriverImageOption } from "./VmDriverImageField";
 
 type VmComputeFieldsProps = {
   values: VmCreateFormValues;
   media: VmMedia[];
   loading: boolean;
+  driverOptions: VmDriverImageOption[];
 };
 
-export default function VmComputeFields({ values, media, loading }: VmComputeFieldsProps) {
+export default function VmComputeFields({
+  values,
+  media,
+  loading,
+  driverOptions,
+}: VmComputeFieldsProps) {
   const fromImage = values.source_kind === "DISK_IMAGE";
   return (
     <>
@@ -63,6 +70,11 @@ export default function VmComputeFields({ values, media, loading }: VmComputeFie
             .map((item) => ({ value: item.mediaKey, label: item.name }))}
         />
       </Form.Item>
+      <VmDriverImageField
+        options={driverOptions}
+        loading={loading}
+        hasSystemMedia={Boolean(values.media_key)}
+      />
       <Form.Item
         field="preset"
         label="实例规格"

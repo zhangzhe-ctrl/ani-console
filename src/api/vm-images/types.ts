@@ -1,7 +1,7 @@
 import type { PageParams } from "@/api/types";
 import type { VmInitializationCapability } from "@/api/vms";
 
-export type VmImageKind = "DISK_IMAGE" | "INSTALL_ISO";
+export type VmImageKind = "DISK_IMAGE" | "INSTALL_ISO" | "DRIVER_ISO";
 
 export type VmImageState =
   | "PREPARING"
@@ -48,7 +48,7 @@ export interface VmImage {
   reason: VmImageReason;
   cleanupState: "NONE" | "PENDING" | "RUNNING" | "COMPLETE" | "BLOCKED";
   source_capacity_bytes: string;
-  sourceCapacityGb?: string;
+  sourceCapacityGb?: string | null;
   sourceRequestedBytes: string;
   observedSourceCapacityBytes: string;
   sourceChecksumBytes: string;
@@ -75,7 +75,7 @@ export interface VmImageListResponse {
 
 export interface CreateVmImageInput {
   name: string;
-  description: string;
+  description?: string;
   kind: VmImageKind;
   format: VmImage["format"];
   source_capacity_bytes: string;

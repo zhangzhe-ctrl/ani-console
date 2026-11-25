@@ -12,7 +12,6 @@ interface EditVmImageModalProps {
 
 interface EditVmImageFormValues {
   name: string;
-  description?: string;
 }
 
 export default function EditVmImageModal({ image, onCancel }: EditVmImageModalProps) {
@@ -34,15 +33,11 @@ export default function EditVmImageModal({ image, onCancel }: EditVmImageModalPr
     try {
       const values = await validateForm<EditVmImageFormValues>(form);
       const name = values.name.trim();
-      const description = values.description ?? "";
-      const input: UpdateVmImageInput = { expected_version: image.version };
-      if (name !== image.name) input.name = name;
-      if (description !== (image.description ?? "")) input.description = description;
-      if (input.name === undefined && input.description === undefined) {
+      if (name === image.name) {
         showMessage({ type: "info", content: "没有需要保存的修改" });
         return;
       }
-      await update.mutateAsync(input);
+      await update.mutateAsync({ expected_version: image.version, name });
     } catch {
       // 表单校验和提交错误由统一反馈处理。
     } finally {
@@ -66,7 +61,7 @@ export default function EditVmImageModal({ image, onCancel }: EditVmImageModalPr
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ name: image.name, description: image.description ?? "" }}
+        initialValues={{ name: image.name }}
         disabled={update.isPending}
       >
         <Form.Item
@@ -87,18 +82,6 @@ export default function EditVmImageModal({ image, onCancel }: EditVmImageModalPr
           ]}
         >
           <Input />
-        </Form.Item>
-        <Form.Item
-          field="description"
-          label="描述"
-          rules={[
-            {
-              validator: (value: string | undefined, callback) =>
-                callback([...(value ?? "")].length > 512 ? "描述最多 512 个字符" : undefined),
-            },
-          ]}
-        >
-          <Input.TextArea placeholder="选填" autoSize={{ minRows: 2, maxRows: 4 }} />
         </Form.Item>
       </Form>
     </Modal>

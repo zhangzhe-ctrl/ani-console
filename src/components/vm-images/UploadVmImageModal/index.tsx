@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, Modal, Progress, Radio, Typography } from "@arco-design/web-react";
+import { Form, Modal, Progress, Typography } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createVmImage,
   uploadVmImageFile,
+  waitForVmImageReady,
   type VmImage,
   type VmImageKind,
   type VmImageOS,
@@ -22,7 +23,6 @@ interface UploadVmImageModalProps {
 
 interface UploadVmImageFormValues {
   name: string;
-  description?: string;
   kind: VmImageKind;
   osFamily: VmImageOS["osFamily"];
   osVersion: string;
@@ -41,6 +41,7 @@ export default function UploadVmImageModal({
   const controller = useRef<AbortController | null>(null);
   const submitted = useRef(false);
   const target = useRef(image);
+  const [fileUploaded, setFileUploaded] = useState(false);
   const [registered, setRegistered] = useState(Boolean(image));
   const [phase, setPhase] = useState<VmImageUploadPhase>("preparing");
   const [percent, setPercent] = useState(0);
@@ -51,21 +52,21 @@ export default function UploadVmImageModal({
       feedback: {
         channel: "message",
         action: "上传镜像",
-        successText: "镜像上传已提交",
+        successText: "镜像已可用",
         errorFallback: "镜像上传失败",
       },
     },
     mutationFn: async (values: UploadVmImageFormValues) => {
       const current = new AbortController();
       controller.current = current;
-      setPhase("preparing");
-      setPercent(0);
+      let fileSent = fileUploaded;
+      setPhase(fileSent ? "uploading" : "preparing");
+      setPercent(fileSent ? 100 : 0);
       try {
         if (!target.current) {
           target.current = await createVmImage(
             {
               name: values.name.trim(),
-              description: values.description?.trim() ?? "",
               kind: values.kind,
               format: values.kind === "DISK_IMAGE" ? "qcow2" : "iso",
               source_capacity_bytes: capacityToBytes(values.sourceCapacityGib, "GiB").toString(),
@@ -83,21 +84,36 @@ export default function UploadVmImageModal({
           setRegistered(true);
           await client.invalidateQueries({ queryKey: ["vm-images", "list"] });
         }
-        await uploadVmImageFile({
-          imageId: target.current.imageId,
-          file: values.file,
-          signal: current.signal,
-          onPhase: setPhase,
-          onProgress: setPercent,
-        });
+        const { imageId } = target.current;
+        if (!fileSent) {
+          await uploadVmImageFile({
+            imageId,
+            file: values.file,
+            signal: current.signal,
+            onPhase: setPhase,
+            onProgress: setPercent,
+          });
+          fileSent = true;
+          setFileUploaded(true);
+          setPhase("uploading");
+          setPercent(100);
+        }
+        await waitForVmImageReady(imageId, current.signal);
       } catch (error) {
-        if (current.signal.aborted) throw new Error("镜像上传已取消，可从列表继续上传");
+        if (current.signal.aborted) {
+          throw new Error(
+            fileSent ? "已停止查询导入状态，可稍后在列表查看" : "镜像上传已取消，可从列表继续上传",
+          );
+        }
         throw error;
       } finally {
         controller.current = null;
       }
     },
-    onSuccess: onSubmitted,
+    onSuccess: async () => {
+      onSubmitted();
+      await client.invalidateQueries({ queryKey: ["vm-media"] });
+    },
     onSettled: () => client.invalidateQueries({ queryKey: ["vm-images", "list"] }),
   });
   const submit = async () => {
@@ -114,7 +130,7 @@ export default function UploadVmImageModal({
       visible
       title={image ? "上传镜像文件" : "添加镜像"}
       style={{ width: 600 }}
-      okText={registered ? "上传文件" : "开始上传"}
+      okText={fileUploaded ? "确认导入结果" : registered ? "上传文件" : "开始上传"}
       cancelText={upload.isPending ? "取消上传" : "取消"}
       confirmLoading={upload.isPending}
       closable={!upload.isPending}
@@ -133,7 +149,6 @@ export default function UploadVmImageModal({
         initialValues={{
           kind: image?.kind ?? "DISK_IMAGE",
           osFamily: "linux",
-          description: "",
           supportsCloudInit: false,
         }}
         onValuesChange={(_, values) => {
@@ -150,15 +165,6 @@ export default function UploadVmImageModal({
         ) : (
           <VmImageFormFields disabled={upload.isPending || registered} />
         )}
-        <Form.Item label="镜像来源" extra="链接导入暂未开放">
-          {/* TODO: 后端提供链接导入契约后接入链接来源，不复用上传目标地址作为来源地址。 */}
-          <Radio.Group value="file" disabled={upload.isPending}>
-            <Radio value="file">本地文件</Radio>
-            <Radio value="url" disabled>
-              镜像链接
-            </Radio>
-          </Radio.Group>
-        </Form.Item>
         <Form.Item
           field="file"
           label="镜像文件"
@@ -170,7 +176,7 @@ export default function UploadVmImageModal({
             },
           ]}
         >
-          <VmImageFileSelect disabled={upload.isPending} />
+          <VmImageFileSelect disabled={upload.isPending || fileUploaded} />
         </Form.Item>
         {upload.isPending ? (
           <div className="flex flex-col gap-2" aria-live="polite">
@@ -185,7 +191,9 @@ export default function UploadVmImageModal({
           </div>
         ) : registered && !image ? (
           <Typography.Paragraph type="secondary">
-            镜像记录已创建，再次提交将继续上传文件。
+            {fileUploaded
+              ? "文件已发送，再次提交将查询导入状态。"
+              : "镜像记录已创建，再次提交将继续上传文件。"}
           </Typography.Paragraph>
         ) : null}
       </Form>

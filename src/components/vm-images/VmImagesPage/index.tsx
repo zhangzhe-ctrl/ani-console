@@ -19,7 +19,7 @@ import { VM_IMAGE_KINDS, VM_IMAGE_STATES } from "../options";
 
 export default function VmImagesPage() {
   const [status, setStatus] = useState<VmImageState | "all">("all");
-  const [kind, setKind] = useState<VmImageKind | "">("");
+  const [kind, setKind] = useState<VmImageKind>();
   const [searchText, setSearchText] = useState("");
   const [adding, setAdding] = useState(false);
   const state = status === "all" ? undefined : status;
@@ -30,8 +30,7 @@ export default function VmImagesPage() {
   );
   const query = useQuery({
     queryKey: ["vm-images", "list", { page, pageSize, state, kind, keyword }],
-    queryFn: ({ signal }) =>
-      listVmImages({ page, pageSize, state, kind: kind || undefined, keyword }, signal),
+    queryFn: ({ signal }) => listVmImages({ page, pageSize, state, kind, keyword }, signal),
     meta: { errorNotification: { id: "vm-images", action: "虚拟机镜像列表加载" } },
   });
   const { actions, dialogNode } = useVmImageActions();
@@ -55,18 +54,29 @@ export default function VmImagesPage() {
       ),
     },
     {
+      key: "state",
+      title: "状态",
+      width: 120,
+      render: (_, image) => <VmImageStatus image={image} />,
+    },
+    {
       key: "kind",
       title: "镜像类型",
       width: 160,
       render: (_, image) => VM_IMAGE_KINDS[image.kind],
     },
     {
-      key: "os",
-      title: "操作系统",
+      key: "osFamily",
+      title: "操作系统类型",
+      width: 130,
+      render: (_, image) => (image.os.osFamily === "windows" ? "Windows" : "Linux"),
+    },
+    {
+      key: "osVersion",
+      title: "操作系统版本",
+      dataIndex: "os.osVersion",
       width: 180,
       ellipsis: true,
-      render: (_, image) =>
-        `${image.os.osFamily === "windows" ? "Windows" : "Linux"} ${image.os.osVersion}`,
     },
     {
       key: "architecture",
@@ -74,12 +84,6 @@ export default function VmImagesPage() {
       dataIndex: "os.architecture",
       width: 120,
       ellipsis: true,
-    },
-    {
-      key: "state",
-      title: "状态",
-      width: 120,
-      render: (_, image) => <VmImageStatus image={image} />,
     },
     {
       key: "source_capacity_bytes",
@@ -124,12 +128,14 @@ export default function VmImagesPage() {
           <Select
             aria-label="镜像类型筛选"
             style={{ width: 176, flexShrink: 0 }}
+            allowClear
+            placeholder="镜像类型"
             value={kind}
             onChange={setKind}
             options={[
-              { value: "", label: "全部类型" },
               { value: "DISK_IMAGE", label: VM_IMAGE_KINDS.DISK_IMAGE },
               { value: "INSTALL_ISO", label: VM_IMAGE_KINDS.INSTALL_ISO },
+              { value: "DRIVER_ISO", label: VM_IMAGE_KINDS.DRIVER_ISO },
             ]}
           />
         ),

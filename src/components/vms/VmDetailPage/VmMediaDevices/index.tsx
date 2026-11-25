@@ -11,18 +11,27 @@ type VmMediaDevicesProps = { vm: VirtualMachine };
 type MediaSlotRow = { slot: VmMediaSlot; state?: VmMediaState };
 const SLOTS: VmMediaSlot[] = ["INSTALL", "DRIVER"];
 
+function hasMedia({ state }: MediaSlotRow) {
+  return Boolean(state?.desiredMedia || state?.observedMedia);
+}
+
+function mediaActionLabel(row: MediaSlotRow) {
+  if (!row.state) return "加载/更换";
+  return hasMedia(row) ? "更换" : "加载";
+}
+
 export default function VmMediaDevices({ vm }: VmMediaDevicesProps) {
-  const [editingSlot, setEditingSlot] = useState<VmMediaSlot>();
+  const [editingMedia, setEditingMedia] = useState<{ slot: VmMediaSlot; action: string }>();
   const [editingBoot, setEditingBoot] = useState(false);
   const eject = useVMMutation<VmMediaSlot>({
     vmId: vm.id,
-    action: "弹出镜像",
+    action: "弹出",
     actionId: "vm-media-eject",
     channel: "notification",
     mutationFn: (slot) => ejectVmMedia(vm.id, slot, { expected_version: vm.version }),
   });
   const disabled = vmIsClosed(vm) || eject.busy;
-  const ejectDisabledReason = (row: MediaSlotRow) => {
+  const ejectDisabledReason = () => {
     if (vmIsClosed(vm)) {
       if (vm.observedState === "Deleted") return "云主机已删除，无法弹出镜像";
       if (vm.observedState === "canceled") return "云主机创建已取消，无法弹出镜像";
@@ -30,24 +39,24 @@ export default function VmMediaDevices({ vm }: VmMediaDevicesProps) {
       return "云主机版本尚未就绪，请刷新后重试";
     }
     if (eject.busy) return "有云主机操作正在提交，请稍后重试";
-    if (!(row.state?.desiredMedia || row.state?.observedMedia)) return "当前光驱没有可弹出的镜像";
     return undefined;
   };
   const actions: RowAction<MediaSlotRow>[] = [
     {
       key: "set",
-      label: "加载/更换镜像",
+      label: mediaActionLabel,
       disabled: () => disabled,
-      onClick: (row) => setEditingSlot(row.slot),
+      onClick: (row) => setEditingMedia({ slot: row.slot, action: mediaActionLabel(row) }),
     },
     {
       key: "eject",
-      label: "弹出镜像",
-      disabled: (row) => Boolean(ejectDisabledReason(row)),
+      label: "弹出",
+      visible: hasMedia,
+      disabled: () => Boolean(ejectDisabledReason()),
       title: ejectDisabledReason,
       onClick: (row) => {
         Modal.confirm({
-          title: "弹出镜像",
+          title: "弹出",
           content: `确认弹出 ${vm.name} 的镜像？此操作不会删除磁盘数据，也不会自动重启云主机。若镜像仍在使用，变更将在下次启动时生效。`,
           onOk: () => eject.mutateAsync(row.slot),
         });
@@ -93,7 +102,7 @@ export default function VmMediaDevices({ vm }: VmMediaDevicesProps) {
             title: "已配置镜像",
             width: 220,
             dataIndex: "state.desiredMedia",
-            placeholder: "未加载镜像",
+            render: (_, row) => (row.state ? row.state.desiredMedia || "未加载镜像" : "待采集"),
             ellipsis: true,
           },
           {
@@ -140,12 +149,13 @@ export default function VmMediaDevices({ vm }: VmMediaDevicesProps) {
           安装系统时选择安装镜像（ISO），安装完成后切换为系统盘。新配置在下次启动时使用。
         </Typography.Text>
       </section>
-      {editingSlot && (
+      {editingMedia && (
         <VmSetMediaModal
           vm={vm}
-          slot={editingSlot}
-          onCancel={() => setEditingSlot(undefined)}
-          onSubmitted={() => setEditingSlot(undefined)}
+          slot={editingMedia.slot}
+          action={editingMedia.action}
+          onCancel={() => setEditingMedia(undefined)}
+          onSubmitted={() => setEditingMedia(undefined)}
         />
       )}
       {editingBoot && (

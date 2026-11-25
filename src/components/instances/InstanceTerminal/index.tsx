@@ -7,7 +7,7 @@ import { Terminal } from "@xterm/xterm";
 import clsx from "clsx";
 import "@xterm/xterm/css/xterm.css";
 import { ApiError } from "@/api/request";
-import { resolveWebSocketUrl } from "@/lib/browser";
+import { buildConsoleSessionWebSocketUrl } from "@/lib/instances";
 import styles from "./index.module.css";
 import { closeNotification, showMessage, showNotification } from "@/lib/feedback";
 import { withId } from "@/lib/id";
@@ -215,7 +215,7 @@ export default function InstanceTerminal({
         }
         const ticket = new URL(data.wsUrl, window.location.href).searchParams.get("ticket") ?? "";
         const socket = new WebSocket(
-          resolveWebSocketUrl(data.sessionId, ticket),
+          buildConsoleSessionWebSocketUrl(data.sessionId, ticket),
           TERMINAL_SUBPROTOCOL,
         );
         socket.binaryType = "arraybuffer";

@@ -1,11 +1,6 @@
-export function resolveWebSocketUrl(sessionId: string, ticket: string): string {
-  if (!sessionId || !ticket) throw new Error("会话 ID 或连接票据缺失，请重新申请");
-  const url = new URL(
-    `/api/console-sessions/${encodeURIComponent(sessionId)}`,
-    window.location.href,
-  );
+export function resolveWebSocketUrl(path: string): string {
+  const url = new URL(path, window.location.href);
   url.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  url.searchParams.set("ticket", ticket);
   return url.href;
 }
 

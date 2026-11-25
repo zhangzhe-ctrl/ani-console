@@ -6,7 +6,7 @@ import RFB from "@novnc/novnc/lib/rfb";
 import { Button, Dropdown, Menu, Modal, Radio, Spin } from "@arco-design/web-react";
 import { IconDown } from "@arco-design/web-react/icon";
 import clsx from "clsx";
-import { resolveWebSocketUrl } from "@/lib/browser";
+import { buildConsoleSessionWebSocketUrl } from "@/lib/instances";
 import { isDateTimeExpired } from "@/lib/date";
 import { closeNotification, showNotification } from "@/lib/feedback";
 import { withId } from "@/lib/id";
@@ -109,7 +109,7 @@ export default function InstanceVnc({ instanceId }: InstanceVncProps) {
           throw new Error("当前浏览器不支持 WebSocket 控制台");
         }
         const ticket = new URL(data.wsUrl, window.location.href).searchParams.get("ticket") ?? "";
-        rfb = new RFB(host, resolveWebSocketUrl(data.sessionId, ticket), {
+        rfb = new RFB(host, buildConsoleSessionWebSocketUrl(data.sessionId, ticket), {
           wsProtocols: [VNC_SUBPROTOCOL],
         });
         applyViewMode(rfb, viewModeRef.current);

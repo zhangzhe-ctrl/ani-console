@@ -1,4 +1,5 @@
 import type { InstanceRecord } from "@/api/instances";
+import { resolveWebSocketUrl } from "@/lib/browser";
 
 type ComputeSpecLabel = `${number}C${number}G`;
 
@@ -68,6 +69,12 @@ export function openInstanceVncWindow(instanceId: string) {
 
 export function openInstanceTerminalWindow(instanceId: string) {
   openInstanceRemoteWindow("terminal", instanceId);
+}
+
+export function buildConsoleSessionWebSocketUrl(sessionId: string, ticket: string): string {
+  if (!sessionId || !ticket) throw new Error("会话 ID 或连接票据缺失，请重新申请");
+  const query = new URLSearchParams({ ticket });
+  return resolveWebSocketUrl(`/api/console-sessions/${encodeURIComponent(sessionId)}?${query}`);
 }
 
 export function validateInstanceRemoteSearch(search: Record<string, unknown>): {

@@ -47,7 +47,8 @@ export interface VmImage {
   state: VmImageState;
   reason: VmImageReason;
   cleanupState: "NONE" | "PENDING" | "RUNNING" | "COMPLETE" | "BLOCKED";
-  sourceCapacityGb: string;
+  source_capacity_bytes: string;
+  sourceCapacityGb?: string;
   sourceRequestedBytes: string;
   observedSourceCapacityBytes: string;
   sourceChecksumBytes: string;
@@ -77,7 +78,7 @@ export interface CreateVmImageInput {
   description: string;
   kind: VmImageKind;
   format: VmImage["format"];
-  source_capacity_gb: string;
+  source_capacity_bytes: string;
   initialization_capability?: VmInitializationCapability;
   os: {
     os_family: VmImageOS["osFamily"];

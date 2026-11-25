@@ -1,13 +1,10 @@
 import { Modal } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  deleteVolume,
-  STORAGE_VOLUME_MAX_CAPACITY_GB,
-  type StorageVolume,
-} from "@/api/storage/volumes";
+import { deleteVolume, type StorageVolume } from "@/api/storage/volumes";
 import type { RowAction } from "@/components/common";
 import ExpandStorageVolumeModal from "@/components/volumes/ExpandStorageVolumeModal";
+import { MAX_CAPACITY_GIB, nextWholeCapacityGib } from "@/lib/capacity";
 
 export function useStorageVolumeActions(onDeleted?: () => void) {
   const queryClient = useQueryClient();
@@ -51,7 +48,8 @@ export function useStorageVolumeActions(onDeleted?: () => void) {
       disabled: (volume) =>
         volume.deleting ||
         remove.isPending ||
-        Number(volume.requested_capacity_gb) >= STORAGE_VOLUME_MAX_CAPACITY_GB,
+        !volume.requested_capacity_bytes ||
+        nextWholeCapacityGib(volume.requested_capacity_bytes) > MAX_CAPACITY_GIB,
       onClick: setExpandTarget,
     },
     unavailable("mount", "挂载"),

@@ -2,17 +2,17 @@ import { Form, Input, InputNumber, Modal, Select } from "@arco-design/web-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createVolume,
-  STORAGE_VOLUME_MAX_CAPACITY_GB,
   type StorageVolumeAccessMode,
   type StorageVolumeMode,
 } from "@/api/storage/volumes";
+import { capacityToBytes, MAX_CAPACITY_GIB } from "@/lib/capacity";
 import { validateForm } from "@/lib/form";
 import StorageVolumeClassField from "@/components/volumes/StorageVolumeClassField";
 
 type CreateStorageVolumeModalProps = { onCancel: () => void };
 type CreateStorageVolumeFormValues = {
   name: string;
-  sizeGb: number;
+  sizeGib: number;
   storageClassName: string;
   volumeMode: StorageVolumeMode;
   accessMode: StorageVolumeAccessMode;
@@ -25,7 +25,7 @@ export default function CreateStorageVolumeModal({ onCancel }: CreateStorageVolu
     mutationFn: (values: CreateStorageVolumeFormValues) =>
       createVolume({
         display_name: values.name.trim(),
-        capacity_gb: String(values.sizeGb),
+        capacity_bytes: capacityToBytes(values.sizeGib, "GiB").toString(),
         storage_class_name: values.storageClassName,
         volume_mode: values.volumeMode,
         access_modes: [values.accessMode],
@@ -49,7 +49,7 @@ export default function CreateStorageVolumeModal({ onCancel }: CreateStorageVolu
         layout="vertical"
         initialValues={{
           name: "",
-          sizeGb: 40,
+          sizeGib: 40,
           volumeMode: "Filesystem",
           accessMode: "ReadWriteOnce",
         }}
@@ -75,26 +75,24 @@ export default function CreateStorageVolumeModal({ onCancel }: CreateStorageVolu
         </Form.Item>
         <Form.Item
           label="容量"
-          field="sizeGb"
+          field="sizeGib"
           required
           rules={[
             {
               validator: (value, callback) =>
                 callback(
-                  Number.isSafeInteger(value) &&
-                    value > 0 &&
-                    value <= STORAGE_VOLUME_MAX_CAPACITY_GB
+                  Number.isSafeInteger(value) && value > 0 && value <= MAX_CAPACITY_GIB
                     ? undefined
-                    : `容量须为 1–${STORAGE_VOLUME_MAX_CAPACITY_GB} GB 之间的整数`,
+                    : `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
                 ),
             },
           ]}
         >
           <InputNumber
             min={1}
-            max={STORAGE_VOLUME_MAX_CAPACITY_GB}
+            max={MAX_CAPACITY_GIB}
             precision={0}
-            suffix="GB"
+            suffix="GiB"
             className="w-full"
           />
         </Form.Item>

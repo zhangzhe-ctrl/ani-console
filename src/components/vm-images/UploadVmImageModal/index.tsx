@@ -9,6 +9,7 @@ import {
   type VmImageOS,
   type VmImageUploadPhase,
 } from "@/api/vm-images";
+import { capacityToBytes } from "@/lib/capacity";
 import { validateForm } from "@/lib/form";
 import VmImageFileSelect from "../VmImageFileSelect";
 import VmImageFormFields from "../VmImageFormFields";
@@ -25,7 +26,7 @@ interface UploadVmImageFormValues {
   kind: VmImageKind;
   osFamily: VmImageOS["osFamily"];
   osVersion: string;
-  sourceCapacityGb: string;
+  sourceCapacityGib: string;
   supportsCloudInit?: boolean;
   file: File;
 }
@@ -67,7 +68,7 @@ export default function UploadVmImageModal({
               description: values.description?.trim() ?? "",
               kind: values.kind,
               format: values.kind === "DISK_IMAGE" ? "qcow2" : "iso",
-              source_capacity_gb: values.sourceCapacityGb,
+              source_capacity_bytes: capacityToBytes(values.sourceCapacityGib, "GiB").toString(),
               initialization_capability:
                 values.kind === "DISK_IMAGE" &&
                 values.osFamily === "linux" &&

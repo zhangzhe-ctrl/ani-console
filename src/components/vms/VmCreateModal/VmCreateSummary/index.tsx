@@ -1,6 +1,8 @@
 import { Descriptions, Typography } from "@arco-design/web-react";
 import type { VmMedia } from "@/api/vms";
 import type { NetworkSecurityGroup } from "@/api/network";
+import CapacityText from "@/components/common/CapacityText";
+import { capacityToBytes } from "@/lib/capacity";
 import type { VmCreateFormValues } from "..";
 
 type VmCreateSummaryProps = {
@@ -39,14 +41,17 @@ export default function VmCreateSummary({
           value: media?.name || "-",
         },
         { label: "实例规格", value: values.preset?.name || "-" },
-        { label: "系统盘", value: `${values.system_disk_size_gb} GB` },
+        {
+          label: "系统盘",
+          value: <CapacityText bytes={capacityToBytes(values.systemDiskSizeGib, "GiB")} />,
+        },
         {
           label: "数据盘",
           value: values.data_disks.length ? (
             <div className="flex flex-col gap-1">
               {values.data_disks.map((disk) => (
                 <div key={disk.client_disk_key}>
-                  {disk.name.trim()} · {disk.size_gb} GB
+                  {disk.name.trim()} · <CapacityText bytes={capacityToBytes(disk.sizeGib, "GiB")} />
                 </div>
               ))}
             </div>

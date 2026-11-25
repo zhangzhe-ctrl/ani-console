@@ -1,14 +1,16 @@
 import { Button, Form, Input, InputNumber, Typography } from "@arco-design/web-react";
 import { IconDelete, IconPlus } from "@arco-design/web-react/icon";
 import { v4 as uuidv4 } from "uuid";
-import type { VmInitialDisk } from "@/api/vms";
+import { MAX_CAPACITY_GIB } from "@/lib/capacity";
+
+export type VmInitialDiskFormValues = { client_disk_key: string; name: string; sizeGib: string };
 
 const DISK_ROW_CLASS_NAME = "grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_32px] items-start gap-3";
 
 export default function VmInitialDiskEditor() {
   const { form, disabled } = Form.useFormContext();
   return (
-    <Form.List<VmInitialDisk> field="data_disks">
+    <Form.List<VmInitialDiskFormValues> field="data_disks">
       {(fields, { add, remove }) => (
         <div className="flex flex-col gap-3">
           {fields.length > 0 && (
@@ -42,7 +44,7 @@ export default function VmInitialDiskEditor() {
                 />
               </Form.Item>
               <Form.Item
-                field={`${item.field}.size_gb`}
+                field={`${item.field}.sizeGib`}
                 style={{ marginBottom: 0 }}
                 formatter={(size: string | undefined) => (size ? Number(size) : undefined)}
                 getValueFromEvent={(size: number | undefined) => String(size ?? "")}
@@ -54,8 +56,8 @@ export default function VmInitialDiskEditor() {
                         size &&
                           (!Number.isInteger(Number(size)) ||
                             Number(size) < 1 ||
-                            Number(size) > 9223372036)
-                          ? "容量须为 1–9223372036 之间的整数"
+                            Number(size) > MAX_CAPACITY_GIB)
+                          ? `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`
                           : undefined,
                       ),
                   },
@@ -66,9 +68,9 @@ export default function VmInitialDiskEditor() {
                   style={{ width: "100%" }}
                   placeholder="请输入数据盘容量"
                   min={1}
-                  max={9223372036}
+                  max={MAX_CAPACITY_GIB}
                   precision={0}
-                  suffix="GB"
+                  suffix="GiB"
                 />
               </Form.Item>
               <Button
@@ -88,10 +90,10 @@ export default function VmInitialDiskEditor() {
               aria-label="添加数据盘"
               disabled={disabled}
               onClick={() => {
-                const disks: VmInitialDisk[] = form.getFieldValue("data_disks") ?? [];
+                const disks: VmInitialDiskFormValues[] = form.getFieldValue("data_disks") ?? [];
                 let suffix = 1;
                 while (disks.some((disk) => disk.name.trim() === `data-${suffix}`)) suffix += 1;
-                add({ client_disk_key: uuidv4(), name: `data-${suffix}`, size_gb: "10" });
+                add({ client_disk_key: uuidv4(), name: `data-${suffix}`, sizeGib: "10" });
               }}
             >
               添加

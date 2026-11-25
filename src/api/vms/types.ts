@@ -12,7 +12,7 @@ export interface VmDisk {
   diskId: string;
   role: string;
   name: string;
-  sizeGb: string;
+  sizeGb?: string;
   requestedBytes: string;
   observedCapacityBytes: string;
   volumeName: string;
@@ -109,7 +109,8 @@ export interface VirtualMachine {
   presetId: string;
   cpuMillis: string;
   memoryMib: string;
-  systemDiskSizeGb: string;
+  systemDiskSizeBytes?: string;
+  systemDiskSizeGb?: string;
   sourceKind: VmSourceKind;
   cloneSource?: {
     sourceVmId: string;
@@ -159,6 +160,7 @@ export interface VmMedia {
   persistentUefi: boolean;
   driverMediaKey?: string;
   virtualCapacityBytes: string;
+  minSystemDiskSizeBytes?: string;
   initializationCapability?: VmInitializationCapability | "";
 }
 // 克隆冻结的是机器描述，介质身份字段可为空。
@@ -168,7 +170,7 @@ export interface VmSourceMedia extends Omit<VmMedia, "kind"> {
 export interface VmInitialDisk {
   client_disk_key: string;
   name: string;
-  size_gb: string;
+  size_bytes: string;
 }
 export type CreateVmInput =
   | {
@@ -176,7 +178,7 @@ export type CreateVmInput =
       source_kind: "DISK_IMAGE" | "INSTALL_ISO";
       preset_id: string;
       media_key: string;
-      system_disk_size_gb: string;
+      system_disk_size_bytes: string;
       data_disks: VmInitialDisk[];
       network: { vpc_id: string; subnet_id: string };
       security_group_ids?: string[];
@@ -204,7 +206,7 @@ export interface VmForceStopInput extends VmChangeInput {
 }
 export interface VmDiskCreateInput extends VmChangeInput {
   name: string;
-  size_gb: string;
+  size_bytes: string;
 }
 export interface VmDiskDetachInput extends VmChangeInput {
   guest_prepared_confirmation: boolean;

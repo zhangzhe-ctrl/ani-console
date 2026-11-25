@@ -2,6 +2,8 @@ import { Button, Descriptions, Empty, Modal, Space, Spin } from "@arco-design/we
 import { useQuery } from "@tanstack/react-query";
 import { getVmSnapshot } from "@/api/vms";
 import { DataTable, ResourceIdentity, StatusBadge } from "@/components/common";
+import CapacityText from "@/components/common/CapacityText";
+import { capacityToBytes } from "@/lib/capacity";
 import { formatDateTime } from "@/lib/format";
 import { withId } from "@/lib/id";
 
@@ -75,8 +77,18 @@ export default function VmSnapshotDetailModal({
                 {
                   title: "容量",
                   width: 140,
-                  dataIndex: "sizeGb",
-                  render: (value) => (value == null || value === "" ? "-" : `${value} GB`),
+                  dataIndex: "requestedBytes",
+                  render: (_, disk) => {
+                    if (disk.requestedBytes && disk.requestedBytes !== "0") {
+                      return <CapacityText bytes={disk.requestedBytes} />;
+                    }
+                    // 旧快照可能只有冻结的 GB 容量。
+                    return (
+                      <CapacityText
+                        bytes={disk.sizeGb ? capacityToBytes(disk.sizeGb, "GB") : undefined}
+                      />
+                    );
+                  },
                 },
                 { title: "准备状态", width: 120, dataIndex: "preparationState" },
                 { title: "原因", width: 220, dataIndex: "reason", ellipsis: true },

@@ -2,12 +2,9 @@ import { Alert, Descriptions, Spin } from "@arco-design/web-react";
 import { useQuery } from "@tanstack/react-query";
 import { getVmRuntime } from "@/api/vms";
 import { DataTable, StatusBadge } from "@/components/common";
-import { formatBytes, formatDateTime } from "@/lib/format";
+import CapacityText from "@/components/common/CapacityText";
+import { formatDateTime } from "@/lib/format";
 import { withId } from "@/lib/id";
-
-function bytes(value?: string) {
-  return value == null ? "-" : formatBytes(Number(value));
-}
 
 type VmGuestInfoProps = { vmId: string };
 
@@ -144,17 +141,27 @@ export default function VmGuestInfo({ vmId }: VmGuestInfoProps) {
             { title: "挂载点", dataIndex: "mountPoint", width: 180, ellipsis: true, fixed: "left" },
             { title: "设备名称", dataIndex: "diskName", width: 160 },
             { title: "文件系统类型", dataIndex: "fileSystemType", width: 130 },
-            { title: "总容量", width: 130, render: (_, fs) => bytes(fs.totalBytes) },
-            { title: "已用容量", width: 130, render: (_, fs) => bytes(fs.usedBytes) },
+            {
+              title: "总容量",
+              width: 130,
+              render: (_, fs) => <CapacityText bytes={fs.totalBytes} />,
+            },
+            {
+              title: "已用容量",
+              width: 130,
+              render: (_, fs) => <CapacityText bytes={fs.usedBytes} />,
+            },
             {
               title: "未用容量",
               width: 130,
               render: (_, fs) =>
                 fs.totalBytes != null &&
                 fs.usedBytes != null &&
-                BigInt(fs.totalBytes) >= BigInt(fs.usedBytes)
-                  ? bytes(String(BigInt(fs.totalBytes) - BigInt(fs.usedBytes)))
-                  : "-",
+                BigInt(fs.totalBytes) >= BigInt(fs.usedBytes) ? (
+                  <CapacityText bytes={BigInt(fs.totalBytes) - BigInt(fs.usedBytes)} />
+                ) : (
+                  "-"
+                ),
             },
           ]}
         />

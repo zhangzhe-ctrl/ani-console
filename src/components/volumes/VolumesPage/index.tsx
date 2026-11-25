@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listVolumes, type StorageVolume, type StorageVolumePhase } from "@/api/storage/volumes";
 import { useListPagination } from "@/hooks/useListPagination";
 import { useStorageVolumeActions } from "@/hooks/useStorageVolumeActions";
+import CapacityText from "@/components/common/CapacityText";
 import CreateStorageVolumeModal from "@/components/volumes/CreateStorageVolumeModal";
 import {
   ResourceIdentity,
@@ -53,8 +54,8 @@ export default function VolumesPage() {
       key: "size",
       title: "容量",
       width: 150,
-      dataIndex: "requested_capacity_gb",
-      render: (value) => (value == null || value === "" ? "-" : `${value} GB`),
+      dataIndex: "requested_capacity_bytes",
+      render: (_, volume) => <CapacityText bytes={volume.requested_capacity_bytes} />,
     },
     {
       key: "storageClass",

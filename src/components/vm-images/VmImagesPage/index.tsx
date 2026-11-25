@@ -10,6 +10,7 @@ import {
 } from "@/components/common";
 import { useListPagination } from "@/hooks/useListPagination";
 import { useVmImageActions } from "@/hooks/useVmImageActions";
+import CapacityText from "@/components/common/CapacityText";
 import { formatDateTime } from "@/lib/format";
 import { withId } from "@/lib/id";
 import UploadVmImageModal from "../UploadVmImageModal";
@@ -81,10 +82,10 @@ export default function VmImagesPage() {
       render: (_, image) => <VmImageStatus image={image} />,
     },
     {
-      key: "sourceCapacityGb",
+      key: "source_capacity_bytes",
       title: "源卷容量",
       width: 160,
-      render: (_, image) => `${image.sourceCapacityGb} GiB`,
+      render: (_, image) => <CapacityText bytes={image.source_capacity_bytes} />,
     },
     {
       key: "createdAt",

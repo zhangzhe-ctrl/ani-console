@@ -16,7 +16,7 @@ export type DetailBreadcrumbItem = {
 
 type DetailSummaryItem = {
   label: string;
-  value: string;
+  value: ReactNode;
 };
 
 export type DetailHeaderItems = DetailSummaryItem[];

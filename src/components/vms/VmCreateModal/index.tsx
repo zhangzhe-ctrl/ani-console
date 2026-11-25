@@ -1,17 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Form } from "@arco-design/web-react";
-import {
-  createVm,
-  listVmMedia,
-  type VmInitialDisk,
-  type VmDns,
-  type VmSourceKind,
-} from "@/api/vms";
+import { createVm, listVmMedia, type VmDns, type VmSourceKind } from "@/api/vms";
 import type { InstancePreset } from "@/api/instances";
 import type { NetworkSecurityGroup, NetworkSubnet, NetworkVPC } from "@/api/network";
 import WizardModal from "@/components/common/WizardModal";
+import { capacityToBytes } from "@/lib/capacity";
 import { validateForm } from "@/lib/form";
+import type { VmInitialDiskFormValues } from "../VmInitialDiskEditor";
 import VmComputeFields from "./VmComputeFields";
 import VmNetworkConfiguration from "./VmNetworkConfiguration";
 import VmSystemFields from "./VmSystemFields";
@@ -23,8 +19,8 @@ export type VmCreateFormValues = {
   preset?: InstancePreset;
   source_kind: VmSourceKind;
   media_key: string;
-  system_disk_size_gb: number;
-  data_disks: VmInitialDisk[];
+  systemDiskSizeGib: number;
+  data_disks: VmInitialDiskFormValues[];
   vpc_id: string;
   subnet_id: string;
   security_group_ids: string[];
@@ -42,13 +38,13 @@ const STEP_TITLES = ["基础配置", "网络与安全", "系统配置", "确认�
 type VmCreateFieldKey =
   | keyof VmCreateFormValues
   | `nameservers[${number}]`
-  | `data_disks[${number}].${"name" | "size_gb"}`;
+  | `data_disks[${number}].${"name" | "sizeGib"}`;
 type VmCreateFieldValue = VmCreateFormValues[keyof VmCreateFormValues];
 const INITIAL: VmCreateFormValues = {
   name: "",
   source_kind: "DISK_IMAGE",
   media_key: "",
-  system_disk_size_gb: 30,
+  systemDiskSizeGib: 30,
   data_disks: [],
   vpc_id: "",
   subnet_id: "",
@@ -105,11 +101,11 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
       "source_kind",
       "media_key",
       "preset",
-      "system_disk_size_gb",
+      "systemDiskSizeGib",
       "data_disks",
       ...values.data_disks.flatMap((_, index): VmCreateFieldKey[] => [
         `data_disks[${index}].name`,
-        `data_disks[${index}].size_gb`,
+        `data_disks[${index}].sizeGib`,
       ]),
     ],
     ["vpc_id", "subnet_id", "security_group_ids", "dns_mode", ...dnsFields],
@@ -163,8 +159,12 @@ export default function VmCreateModal({ onCancel, onCreated }: VmCreateModalProp
         preset_id: current.preset.id,
         source_kind: source.kind,
         media_key: current.media_key,
-        system_disk_size_gb: String(current.system_disk_size_gb),
-        data_disks: current.data_disks.map((disk) => ({ ...disk, name: disk.name.trim() })),
+        system_disk_size_bytes: capacityToBytes(current.systemDiskSizeGib, "GiB").toString(),
+        data_disks: current.data_disks.map((disk) => ({
+          client_disk_key: disk.client_disk_key,
+          name: disk.name.trim(),
+          size_bytes: capacityToBytes(disk.sizeGib, "GiB").toString(),
+        })),
         security_group_ids: current.security_group_ids,
         network: { vpc_id: current.vpc_id, subnet_id: current.subnet_id },
         start_after_create: current.start_after_create,

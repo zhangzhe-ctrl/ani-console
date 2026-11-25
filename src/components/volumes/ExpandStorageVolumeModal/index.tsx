@@ -1,24 +1,26 @@
 import { Alert, Form, InputNumber, Modal, Typography } from "@arco-design/web-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  expandVolume,
-  STORAGE_VOLUME_MAX_CAPACITY_GB,
-  type StorageVolume,
-} from "@/api/storage/volumes";
+import { expandVolume, type StorageVolume } from "@/api/storage/volumes";
+import CapacityText from "@/components/common/CapacityText";
+import { capacityToBytes, MAX_CAPACITY_GIB, nextWholeCapacityGib } from "@/lib/capacity";
 import { validateForm } from "@/lib/form";
 type ExpandStorageVolumeModalProps = { volume: StorageVolume; onCancel: () => void };
-type ExpandStorageVolumeFormValues = { capacityGb: number };
+type ExpandStorageVolumeFormValues = { capacityGib: number };
 export default function ExpandStorageVolumeModal({
   volume,
   onCancel,
 }: ExpandStorageVolumeModalProps) {
   const [form] = Form.useForm<ExpandStorageVolumeFormValues>();
   const queryClient = useQueryClient();
-  const currentCapacity = Number(volume.requested_capacity_gb);
+  const currentCapacity = BigInt(volume.requested_capacity_bytes);
+  const minimumGib = nextWholeCapacityGib(currentCapacity);
   const expand = useMutation({
     meta: { feedback: { channel: "message", action: "扩容块存储卷", successText: "扩容已提交" } },
-    mutationFn: ({ capacityGb }: ExpandStorageVolumeFormValues) =>
-      expandVolume(volume.pvc_name, { expected_uid: volume.uid, capacity_gb: String(capacityGb) }),
+    mutationFn: ({ capacityGib }: ExpandStorageVolumeFormValues) =>
+      expandVolume(volume.pvc_name, {
+        expected_uid: volume.uid,
+        capacity_bytes: capacityToBytes(capacityGib, "GiB").toString(),
+      }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["storage", "volumes"] }),
@@ -38,36 +40,41 @@ export default function ExpandStorageVolumeModal({
       <Alert
         type="info"
         showIcon
-        content={`当前申请容量 ${volume.requested_capacity_gb} GB；块存储只支持扩容，不支持缩容。`}
+        content={
+          <>
+            当前申请容量 <CapacityText bytes={currentCapacity} />
+            ；块存储只支持扩容，不支持缩容。
+          </>
+        }
       />
       <Form
         form={form}
         layout="vertical"
         className="mt-2"
-        initialValues={{ capacityGb: currentCapacity + 1 }}
+        initialValues={{ capacityGib: minimumGib }}
       >
         <Form.Item
           label="新容量"
-          field="capacityGb"
+          field="capacityGib"
           required
           rules={[
             {
               validator: (value, callback) =>
                 callback(
                   Number.isSafeInteger(value) &&
-                    value > currentCapacity &&
-                    value <= STORAGE_VOLUME_MAX_CAPACITY_GB
+                    value <= MAX_CAPACITY_GIB &&
+                    capacityToBytes(value, "GiB") > currentCapacity
                     ? undefined
-                    : `新容量须为大于当前申请容量且不超过 ${STORAGE_VOLUME_MAX_CAPACITY_GB} GB 的整数`,
+                    : `新容量须为大于当前申请容量且不超过 ${MAX_CAPACITY_GIB} GiB 的整数`,
                 ),
             },
           ]}
         >
           <InputNumber
-            min={currentCapacity + 1}
-            max={STORAGE_VOLUME_MAX_CAPACITY_GB}
+            min={minimumGib}
+            max={MAX_CAPACITY_GIB}
             precision={0}
-            suffix="GB"
+            suffix="GiB"
             className="w-full"
           />
         </Form.Item>

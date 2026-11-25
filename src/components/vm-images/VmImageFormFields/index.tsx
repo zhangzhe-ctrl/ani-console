@@ -1,4 +1,5 @@
 import { Checkbox, Form, Input, InputNumber, Select } from "@arco-design/web-react";
+import { MAX_CAPACITY_GIB } from "@/lib/capacity";
 import { VM_IMAGE_KINDS } from "../options";
 
 interface VmImageFormFieldsProps {
@@ -39,7 +40,7 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
           />
         </Form.Item>
         <Form.Item
-          field="sourceCapacityGb"
+          field="sourceCapacityGib"
           label="源卷容量"
           required
           tooltip="用于存放镜像的源卷容量，应满足镜像展开后的空间需求。"
@@ -47,9 +48,9 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
             {
               validator: (value: string | undefined, callback) =>
                 callback(
-                  value && /^[1-9]\d*$/.test(value) && BigInt(value) <= 9223372036854775807n
+                  value && /^[1-9]\d*$/.test(value) && BigInt(value) <= BigInt(MAX_CAPACITY_GIB)
                     ? undefined
-                    : "请输入至少 1 GiB 的整数容量",
+                    : `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
                 ),
             },
           ]}
@@ -57,6 +58,7 @@ export default function VmImageFormFields({ disabled }: VmImageFormFieldsProps) 
           <InputNumber
             strictMode
             min={1}
+            max={MAX_CAPACITY_GIB}
             precision={0}
             suffix="GiB"
             disabled={disabled}

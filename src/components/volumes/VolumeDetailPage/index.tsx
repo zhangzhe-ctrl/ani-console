@@ -4,7 +4,7 @@ import { getVolume } from "@/api/storage/volumes";
 import { useStorageVolumeActions } from "@/hooks/useStorageVolumeActions";
 import { useBackOrFallback } from "@/hooks/useBackOrFallback";
 import { withId } from "@/lib/id";
-import { formatBytes } from "@/lib/format";
+import CapacityText from "@/components/common/CapacityText";
 import { navigationBreadcrumbsForPath } from "@/layouts/AppLayout/navigation";
 import {
   AliIcon,
@@ -28,6 +28,7 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
   if (!detail.data) return <DetailPagePlaceholder loading={detail.isLoading} />;
   const { volume, consumers, conditions, events, events_known, consumers_known } = detail.data;
   if (!volume) return <DetailPagePlaceholder loading={false} />;
+  const requestedCapacity = <CapacityText bytes={volume.requested_capacity_bytes} />;
   const consumerNames = consumers_known
     ? consumers.map((item) => item.name).join("、") || "-"
     : "未知";
@@ -41,10 +42,7 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
         headerItems={[
           {
             label: "容量",
-            value:
-              volume.requested_capacity_gb == null || volume.requested_capacity_gb === ""
-                ? "-"
-                : `${volume.requested_capacity_gb} GB`,
+            value: requestedCapacity,
           },
         ]}
         actions={
@@ -70,17 +68,27 @@ export default function VolumeDetailPage({ volumeId, tab, onTabChange }: VolumeD
               { label: "用途", value: volume.volume_mode === "Block" ? "块设备" : "文件系统" },
               {
                 label: "容量 / 类型",
-                value: `${volume.requested_capacity_gb} GB · ${volume.storage_class_name}`,
+                value: (
+                  <>
+                    {requestedCapacity} · {volume.storage_class_name}
+                  </>
+                ),
               },
               {
                 label: "观测容量",
-                value: volume.observed_capacity_known
-                  ? formatBytes(Number(volume.observed_capacity_bytes))
-                  : "未知",
+                value: volume.observed_capacity_known ? (
+                  <CapacityText bytes={volume.observed_capacity_bytes} />
+                ) : (
+                  "未知"
+                ),
               },
               {
                 label: "原始容量",
-                value: volume.observed_capacity_known ? volume.observed_capacity_quantity : "未知",
+                value: volume.observed_capacity_known ? (
+                  <CapacityText bytes={volume.observed_capacity_bytes} />
+                ) : (
+                  "未知"
+                ),
               },
               { label: "访问模式", value: volume.access_modes.join(" / ") },
               {

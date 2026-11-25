@@ -14,6 +14,7 @@ export interface StorageVolume {
   volume_mode: StorageVolumeMode;
   access_modes: StorageVolumeAccessMode[];
   requested_capacity_gb: string;
+  requested_capacity_bytes: string;
   observed_capacity_bytes: string;
   observed_capacity_known: boolean;
   observed_capacity_quantity: string;
@@ -63,7 +64,7 @@ export interface StorageVolumeListResponse {
 }
 export interface CreateStorageVolumeInput {
   display_name: string;
-  capacity_gb: string;
+  capacity_bytes: string;
   storage_class_name: string;
   volume_mode?: StorageVolumeMode;
   access_modes?: StorageVolumeAccessMode[];
@@ -73,14 +74,14 @@ export interface CreateStorageVolumeRequest {
 }
 export interface StorageVolumeExpandInput {
   expected_uid: string;
-  capacity_gb: string;
+  capacity_bytes: string;
 }
 export interface StorageVolumeDeleteInput {
   expected_uid: string;
 }
 export interface StorageVolumeExpandRequest {
   data: StorageVolumeExpandInput & { pvc_name: string };
-  update_mask: "capacityGb";
+  update_mask: "capacityBytes";
 }
 export interface StorageVolumeDeleteRequest {
   data: StorageVolumeDeleteInput & { pvc_name: string };

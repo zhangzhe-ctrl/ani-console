@@ -1,6 +1,7 @@
 import { Form, Input, InputNumber, Radio, Select } from "@arco-design/web-react";
 import type { VmMedia } from "@/api/vms";
 import { ComputePresetSelect } from "@/components/common";
+import { MAX_CAPACITY_GIB } from "@/lib/capacity";
 import VmInitialDiskEditor from "../../VmInitialDiskEditor";
 import type { VmCreateFormValues } from "..";
 
@@ -80,15 +81,25 @@ export default function VmComputeFields({ values, media, loading }: VmComputeFie
         <ComputePresetSelect usage="VIRTUAL_MACHINE" computeType="cpu" />
       </Form.Item>
       <Form.Item
-        field="system_disk_size_gb"
+        field="systemDiskSizeGib"
         label="系统盘容量"
-        rules={[{ required: true, message: "请输入系统盘容量" }]}
+        rules={[
+          { required: true, message: "请输入系统盘容量" },
+          {
+            validator: (value, callback) =>
+              callback(
+                Number.isSafeInteger(value) && value >= 1 && value <= MAX_CAPACITY_GIB
+                  ? undefined
+                  : `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
+              ),
+          },
+        ]}
       >
         <InputNumber
           min={1}
-          max={9223372036}
+          max={MAX_CAPACITY_GIB}
           precision={0}
-          suffix="GB"
+          suffix="GiB"
           placeholder="请输入系统盘容量"
         />
       </Form.Item>

@@ -14,6 +14,7 @@ import InstanceMetrics from "@/components/instances/InstanceMetrics";
 import { useVMActions } from "@/hooks/useVMActions";
 import { useBackOrFallback } from "@/hooks/useBackOrFallback";
 import { navigationBreadcrumbsForPath } from "@/layouts/AppLayout/navigation";
+import CapacityText from "@/components/common/CapacityText";
 import { withId } from "@/lib/id";
 import { formatDateTime } from "@/lib/format";
 // TODO(feature-visibility): 待云主机远程连接支持后恢复控制台打开方法导入。
@@ -82,7 +83,7 @@ export default function VmDetailPage({ instanceId, tab, onTabChange }: VmDetailP
               },
               {
                 label: "系统盘容量",
-                value: vm.systemDiskSizeGb ? `${vm.systemDiskSizeGb} GB` : "-",
+                value: <CapacityText bytes={vm.systemDiskSizeBytes} />,
               },
               {
                 label: "操作系统",

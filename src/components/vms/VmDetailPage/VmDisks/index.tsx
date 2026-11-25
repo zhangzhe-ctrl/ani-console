@@ -12,6 +12,7 @@ import { DataTable, ResourceIdentity, StatusBadge, type RowAction } from "@/comp
 import VmCreateDiskModal from "@/components/vms/VmCreateDiskModal";
 import VmDetachDiskModal from "@/components/vms/VmDetachDiskModal";
 import { useVMMutation } from "@/hooks/useVMMutation";
+import CapacityText from "@/components/common/CapacityText";
 import { withId } from "@/lib/id";
 import { vmIsClosed } from "@/lib/vms";
 
@@ -129,7 +130,7 @@ export default function VmDisks({ vm }: VmDisksProps) {
           {
             title: "磁盘容量",
             width: 140,
-            render: (_, disk) => (disk.sizeGb ? `${disk.sizeGb} GB` : "-"),
+            render: (_, disk) => <CapacityText bytes={disk.requestedBytes} />,
           },
         ]}
       />

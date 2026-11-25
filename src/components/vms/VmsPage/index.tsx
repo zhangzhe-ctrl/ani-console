@@ -10,6 +10,7 @@ import {
 } from "@/components/common";
 import { useListPagination } from "@/hooks/useListPagination";
 import { useVMActions } from "@/hooks/useVMActions";
+import CapacityText from "@/components/common/CapacityText";
 import { formatDateTime } from "@/lib/format";
 import { withId } from "@/lib/id";
 import VmCreateModal from "../VmCreateModal";
@@ -62,10 +63,10 @@ export default function VmsPage() {
       dataIndex: "presetName",
     },
     {
-      key: "systemDiskSizeGb",
+      key: "systemDiskSizeBytes",
       title: "系统盘容量",
       width: 140,
-      render: (_, vm) => (vm.systemDiskSizeGb ? `${vm.systemDiskSizeGb} GB` : "-"),
+      render: (_, vm) => <CapacityText bytes={vm.systemDiskSizeBytes} />,
     },
     {
       key: "image",

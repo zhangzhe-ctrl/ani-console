@@ -1,11 +1,12 @@
 import { Form, Input, InputNumber, Modal } from "@arco-design/web-react";
 import { createVmDisk, type VirtualMachine } from "@/api/vms";
 import { useVMMutation } from "@/hooks/useVMMutation";
+import { capacityToBytes, MAX_CAPACITY_GIB } from "@/lib/capacity";
 import { validateForm } from "@/lib/form";
 import { vmIsClosed } from "@/lib/vms";
 
 type VmCreateDiskModalProps = { vm: VirtualMachine; onCancel: () => void; onSubmitted: () => void };
-type VmCreateDiskFormValues = { name: string; sizeGb: number };
+type VmCreateDiskFormValues = { name: string; sizeGib: number };
 
 export default function VmCreateDiskModal({ vm, onCancel, onSubmitted }: VmCreateDiskModalProps) {
   const [form] = Form.useForm<VmCreateDiskFormValues>();
@@ -19,7 +20,7 @@ export default function VmCreateDiskModal({ vm, onCancel, onSubmitted }: VmCreat
       createVmDisk(vm.id, {
         expected_version: vm.version,
         name: values.name.trim(),
-        size_gb: String(values.sizeGb),
+        size_bytes: capacityToBytes(values.sizeGib, "GiB").toString(),
       }),
   });
   return (
@@ -34,7 +35,7 @@ export default function VmCreateDiskModal({ vm, onCancel, onSubmitted }: VmCreat
         await mutation.mutateAsync(await validateForm(form));
       }}
     >
-      <Form form={form} layout="vertical" initialValues={{ sizeGb: 10 }}>
+      <Form form={form} layout="vertical" initialValues={{ sizeGib: 10 }}>
         <Form.Item
           field="name"
           label="名称"
@@ -50,11 +51,21 @@ export default function VmCreateDiskModal({ vm, onCancel, onSubmitted }: VmCreat
           <Input maxLength={128} />
         </Form.Item>
         <Form.Item
-          field="sizeGb"
+          field="sizeGib"
           label="容量"
-          rules={[{ required: true, type: "number", min: 1, message: "请输入正整数容量" }]}
+          rules={[
+            { required: true, message: "请输入数据盘容量" },
+            {
+              validator: (value, callback) =>
+                callback(
+                  Number.isSafeInteger(value) && value >= 1 && value <= MAX_CAPACITY_GIB
+                    ? undefined
+                    : `容量须为 1–${MAX_CAPACITY_GIB} GiB 之间的整数`,
+                ),
+            },
+          ]}
         >
-          <InputNumber min={1} max={9223372036} precision={0} suffix="GB" />
+          <InputNumber min={1} max={MAX_CAPACITY_GIB} precision={0} suffix="GiB" />
         </Form.Item>
       </Form>
     </Modal>
